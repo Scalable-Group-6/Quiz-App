@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, SetStateAction } from "react";
 
 interface QuizType {
   name: string;
@@ -33,6 +33,7 @@ export default function TakeQuizPage() {
     {
       type: "True or False",
       question: "kiki ganteng?",
+      options: [{ text: "True" }, { text: "False" }],
       answer: "False",
     },
     {
@@ -45,12 +46,26 @@ export default function TakeQuizPage() {
       question: "kata kata yang keluar dari mulut rama adalah?",
       answer: "hmm",
     },
+    {
+      type: "Multiple Choice",
+      question: "apa itu?",
+      options: [
+        { text: "itu" },
+        { text: "apa" },
+        { text: "apa itu" },
+        { text: "itu apa" },
+      ],
+      answer: "ira",
+    },
   ]);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
   const [isQuizFinished, setIsQuizFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600); // 10 menit waktu pengerjaan
+  const [selectedOptions, setSelectedOptions] = useState<string[]>(
+    Array(questions.length).fill("")
+  );
 
   useEffect(() => {
     if (timeLeft > 0 && !isQuizFinished) {
@@ -67,6 +82,10 @@ export default function TakeQuizPage() {
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestionIndex] = answer;
     setUserAnswers(newAnswers);
+
+    const newSelectedOptions = [...selectedOptions];
+    newSelectedOptions[currentQuestionIndex] = answer;
+    setSelectedOptions(newSelectedOptions);
   };
 
   const handleNextQuestion = () => {
@@ -101,76 +120,87 @@ export default function TakeQuizPage() {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+  };
+
+  const handleRestartQuiz = () => {
+    setCurrentQuestionIndex(0);
+    setUserAnswers([]);
+    setIsQuizFinished(false);
+    setTimeLeft(600);
+    setSelectedOptions(Array(questions.length).fill(""));
   };
 
   const currentQuestion = questions[currentQuestionIndex];
 
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto pb-5">
       <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto relative p-6">
-        <div className="absolute top-4 right-6 text-white">
-          Time Left: {formatTime(timeLeft)}
-        </div>
         {!isQuizFinished ? (
           <div className="py-4 my-1 mx-5">
-            <h3 className="text-lg font-bold text-white">
-              Question {currentQuestionIndex + 1}
-            </h3>
-            <div className="bg-[#2A2D36] p-4 rounded-lg shadow-md">
-              <p className="text-white font-semibold">{currentQuestion.type}</p>
-              <p className="text-white">{currentQuestion.question}</p>
+            <div className="flex flex-row justify-between px-1">
+              <h3 className="text-lg font-bold text-white mb-2">
+                Question {currentQuestionIndex + 1}
+              </h3>
+              <div className="text-white">
+                Time Left: {formatTime(timeLeft)}
+              </div>
+            </div>
+            <div className="bg-[#2A2D36] p-6 rounded-lg shadow-md ">
+              <div className="mb-2 border-2 rounded-lg p-2 border-gray-600">
+                <p className="text-white  font-bold text-lg">
+                  {currentQuestion.type}
+                </p>
+                <p className="text-white">{currentQuestion.question}</p>
+              </div>
 
               {currentQuestion.type === "Multiple Choice" && (
-                <ul className="list-disc pl-5">
+                <div>
                   {currentQuestion.options?.map((option, index) => (
-                    <li key={index} className="text-white">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="multipleChoice"
-                          value={option.text}
-                          onChange={() => handleAnswerChange(option.text)}
-                          checked={userAnswers[currentQuestionIndex] === option.text}
-                          className="form-radio text-blue-500"
-                        />
-                        <span className="ml-2">{option.text}</span>
-                      </label>
-                    </li>
+                    <div
+                      className=""
+                      key={index}
+                      onClick={() => handleAnswerChange(option.text)}
+                    >
+                      <div
+                        className={` ${
+                          selectedOptions[currentQuestionIndex] === option.text
+                            ? "bg-blue-600"
+                            : "bg-gray-700"
+                        } mb-2 p-2 rounded-lg hover:brightness-75`}
+                      >
+                        <p>{option.text}</p>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
 
               {currentQuestion.type === "True or False" && (
-                <div className="space-y-2 flex items-center">
-                  <label className="flex items-center mr-4">
-                    <input
-                      type="radio"
-                      name="trueFalse"
-                      value="True"
-                      onChange={() => handleAnswerChange("True")}
-                      checked={userAnswers[currentQuestionIndex] === "True"}
-                      className="form-radio text-blue-500 custom-radio"
-                    />
-                    <span className="ml-2 text-white">True</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="trueFalse"
-                      value="False"
-                      onChange={() => handleAnswerChange("False")}
-                      checked={userAnswers[currentQuestionIndex] === "False"}
-                      className="form-radio text-blue-500 custom-radio"
-                    />
-                    <span className="ml-2 text-white">False</span>
-                  </label>
+                <div className="flex flex-row gap-3 ">
+                  {currentQuestion.options?.map((option, index) => (
+                    <div
+                      className="w-full"
+                      key={index}
+                      onClick={() => handleAnswerChange(option.text)}
+                    >
+                      <div
+                        className={`w-full ${
+                          selectedOptions[currentQuestionIndex] === option.text
+                            ? "bg-blue-600"
+                            : "bg-gray-700"
+                        } mb-2 p-2 rounded-lg hover:brightness-75`}
+                      >
+                        <p>{option.text}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
               {currentQuestion.type === "Fill the Blank" && (
                 <input
-                  className="w-full p-2 rounded border border-gray-300 text-gray-900"
+                  className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
                   type="text"
                   value={userAnswers[currentQuestionIndex] || ""}
                   onChange={(e) => handleAnswerChange(e.target.value)}
@@ -180,7 +210,7 @@ export default function TakeQuizPage() {
 
               {currentQuestion.type === "Short Answer" && (
                 <input
-                  className="w-full p-2 rounded border border-gray-300 text-gray-900"
+                  className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600 "
                   type="text"
                   value={userAnswers[currentQuestionIndex] || ""}
                   onChange={(e) => handleAnswerChange(e.target.value)}
@@ -190,7 +220,7 @@ export default function TakeQuizPage() {
 
               <div className="flex items-center justify-between mt-4">
                 <button
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  className="bg-blue-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:bg-blue-700"
                   type="button"
                   onClick={handlePreviousQuestion}
                   disabled={currentQuestionIndex === 0}
@@ -198,22 +228,64 @@ export default function TakeQuizPage() {
                   Previous Question
                 </button>
                 <button
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  className="bg-blue-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:bg-blue-700"
                   type="button"
                   onClick={handleNextQuestion}
                 >
-                  {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Finish Quiz"}
+                  {currentQuestionIndex < questions.length - 1
+                    ? "Next Question"
+                    : "Finish Quiz"}
                 </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="py-4 my-1 mx-5">
-            <h3 className="text-lg font-bold text-white">Quiz Results</h3>
+            <h1 className="text-2xl font-bold text-white pb-2">Quiz Results</h1>
             <div className="bg-[#2A2D36] p-4 rounded-lg shadow-md">
               <p className="text-white font-semibold">
-                Your Score: {calculateScore()} / {questions.length} ({calculatePercentage()}%)
+                Your Score: {calculateScore()} / {questions.length} (
+                {calculatePercentage()}%)
               </p>
+            </div>
+            <div>
+              {questions.map((question, index) => (
+                <div key={index} className="pt-2 ">
+                  <div className=" bg-[#2A2D36] rounded-lg px-4 py-5">
+                    <h3 className="text-lg font-bold text-white mb-2">
+                      Question {index + 1}
+                    </h3>
+                    <h2 className="border-2 rounded-lg p-2 border-gray-600">{question.question}</h2>
+                    <div className=" flex flex-row justify-between gap-4">
+                      <p className={`w-full rounded-lg p-4 mt-2 ${userAnswers[index]?.toLowerCase()===question.answer.toLowerCase() ? 'bg-green-600' : 'bg-red-600' } `}>
+                        Your answer :{" "}
+                        <span
+                          
+                        >
+                          {userAnswers[index]}
+                        </span>
+                      </p>
+                      <p className="bg-blue-600 w-full rounded-lg p-4 mt-2">Correct answer: {question.answer}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="pt-4 pb-3 flex flex-row justify-between">
+              <button
+                className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
+                onClick={handleRestartQuiz}
+              >
+                Restart Quiz
+              </button>
+              <button>
+                <a
+                  href="/"
+                  className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
+                >
+                  Finish Quiz
+                </a>
+              </button>
             </div>
           </div>
         )}
