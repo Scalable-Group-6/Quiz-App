@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { SetStateAction, useState } from "react";
 
 interface QuizType {
@@ -37,9 +38,13 @@ const quizzType: QuizType[] = [
 ];
 
 export default function createQuizPage() {
+  const router = useRouter();
   const [selectedQuizType, setSelectedQuizType] = useState<QuizType | null>(
     null
   );
+  const [subjectName, setSubjectName] = useState("");
+  const [description, setDescription] = useState("");
+  const [duration, setDuration] = useState(0); // You might want to get this from an input field
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
@@ -100,33 +105,86 @@ export default function createQuizPage() {
     setMultipleChoiceOptions(newOptions);
   };
 
+  const handleSaveQuiz = () => {
+    if (questions.length === 0) {
+      alert("Please add at least one question to save the quiz.");
+      return;
+    }
+
+    // Here you would typically send the quiz data to a backend server.
+    // For this example, we'll just log the quiz data to the console.
+    const quizData = {
+      subject: subjectName,
+      description: description, // You might want to get this from an input field
+      duration: duration, // You might want to get this from an input field
+      questions: questions,
+    };
+
+    console.log("Quiz Data:", quizData);
+
+    // Reset the state after saving
+    setQuestions([]);
+  };
+
   return (
     <div className="container mx-auto">
-      <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto">
+      <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
         <div className="py-4 my-1 mx-5 ">
           <span>
             <p className="text-xl font-bold">Create A New Quiz</p>
           </span>
-          <div className="">
+          <div className="mt-2">
             <input
-              className="text-black px-3 rounded-lg mt-3 w-full h-10"
+              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
               type="text"
               name="subjectName"
               id="subject"
+              value={subjectName}
+              onChange={(e) => setSubjectName(e.target.value)}
               placeholder="Enter Subject Name"
             />
           </div>
+          <div className="mt-2">
+            <p className="font-bold text-lg mb-2">Quiz Descriotion</p>
+            <input
+              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+              type="text"
+              name="description"
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter Quiz Description"
+            />
+          </div>
+          <div className="mt-2">
+            <p className="font-bold text-lg">Duration (in minutes)</p>
+            <input
+              className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+              type="number"
+              value={duration}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value >= 0) {
+                  setDuration(value);
+                } else {
+                  setDuration(0);
+                }
+              }}
+              min="0"
+              placeholder="Enter Duration"
+            />
+          </div>
           <div className="mt-4">
-            <p>Add New Questions</p>
-            <div className="grid grid-cols-2">
+            <p className="font-bold text-lg">Add New Questions</p>
+            <div className="grid grid-cols-2 gap-4">
               {quizzType.map((quiz, index) => {
                 return (
                   <div
                     key={index}
-                    className={` py-2 px-4  mt-2 w-3/4 ${
+                    className={` py-2 px-4  mt-2 w-full ${
                       index === quizzType.length
                         ? ""
-                        : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl hover:brightness-90"
+                        : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
                     }`}
                     onClick={() => handleQuizTypeClick(quiz)}
                   >
@@ -140,32 +198,46 @@ export default function createQuizPage() {
 
         <div className="py-4 my-1 mx-5">
           <h3 className="text-lg font-bold">Saved Questions</h3>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 mt-2">
             {questions.map((q, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg shadow-md">
-                <p className="text-gray-700 font-semibold">{q.type}</p>
-                <p className="text-gray-900">{q.question}</p>
+              <div
+                key={index}
+                className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
+              >
+                <p className="text-white-700 font-bold text-xl">{q.type}</p>
+                <p className="text-white-900 border-2 rounded-lg p-2 border-gray-600 mt-2">
+                  {q.question}
+                </p>
                 {q.type === "Multiple Choice" && (
-                  <ul className="list-disc pl-5">
+                  <div className="mt-2">
                     {q.options?.map((option, i) => (
-                      <li key={i} className="text-gray-700">
+                      <p key={i} className="bg-gray-600 mb-2 p-2 rounded-lg">
                         {option.text}
-                      </li>
+                      </p>
                     ))}
-                  </ul>
+                  </div>
                 )}
-                <p className="text-gray-600 italic">Answer: {q.answer}</p>
+                <p className="text-white-600 italic border-2 rounded-lg p-2 border-gray-600 mt-2 ">
+                  Answer : {q.answer}
+                </p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex flex-row py-4 my-1 mx-auto">
-          <div className="mx-auto">
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        <div className="flex flex-row p-6 my-1 justify-between">
+            <button 
+            onClick={() => router.push("/")}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Back to Dashboard
+            </button>
+            <button
+              onClick={handleSaveQuiz}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
               Save Quiz
             </button>
-          </div>
+          
         </div>
       </div>
 
@@ -293,12 +365,12 @@ export default function createQuizPage() {
                     Save Question
                   </button>
                   <button
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      type="button"
-                      onClick={closeModal}
-                    >
-                      Cancel
-                    </button>
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             )}
@@ -342,12 +414,12 @@ export default function createQuizPage() {
                     Save Question
                   </button>
                   <button
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      type="button"
-                      onClick={closeModal}
-                    >
-                      Cancel
-                    </button>
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             )}
@@ -388,12 +460,12 @@ export default function createQuizPage() {
                     Save Question
                   </button>
                   <button
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      type="button"
-                      onClick={closeModal}
-                    >
-                      Cancel
-                    </button>
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             )}

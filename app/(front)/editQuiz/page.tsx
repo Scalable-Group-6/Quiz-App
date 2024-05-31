@@ -27,11 +27,13 @@ const quizzType: QuizType[] = [
 interface InitialQuiz {
   subjectName: string;
   duration: number;
+  description: string;
   questions: Question[];
 }
 
 const defaultQuiz: InitialQuiz = {
   subjectName: "Sample Quiz",
+  description: "This is a sample quiz.",
   duration: 30,
   questions: [
     {
@@ -72,6 +74,7 @@ export default function EditQuizPage({
   initialQuiz?: InitialQuiz;
 }) {
   const [subjectName, setSubjectName] = useState(initialQuiz.subjectName);
+  const [description, setDescription] = useState(initialQuiz.description);
   const [duration, setDuration] = useState(initialQuiz.duration);
   const [questions, setQuestions] = useState<Question[]>(initialQuiz.questions);
   const [selectedQuizType, setSelectedQuizType] = useState<QuizType | null>(
@@ -88,6 +91,7 @@ export default function EditQuizPage({
   useEffect(() => {
     if (initialQuiz) {
       setSubjectName(initialQuiz.subjectName || "");
+      setDescription(initialQuiz.description || "");
       setDuration(initialQuiz.duration || 0);
       setQuestions(initialQuiz.questions || []);
     }
@@ -190,14 +194,14 @@ export default function EditQuizPage({
 
   return (
     <div className="container mx-auto">
-      <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto">
+      <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
         <div className="py-4 my-1 mx-5">
           <span>
             <p className="text-xl font-bold">Edit Quiz</p>
           </span>
-          <div className="">
+          <div className="mt-2">
             <input
-              className="text-black px-3 rounded-lg mt-3 w-full h-10"
+              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
               type="text"
               name="subjectName"
               id="subject"
@@ -206,23 +210,43 @@ export default function EditQuizPage({
               placeholder="Enter Subject Name"
             />
           </div>
-          <div className="mt-4">
-            <p>Duration (in minutes)</p>
+          <div className="mt-2">
+            <p className="font-bold text-lg pb-2">Quiz Desripction</p>
             <input
-              className="text-black px-3 rounded-lg mt-3 w-full h-10"
+              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+              type="text"
+              name="subjectName"
+              id="subject"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter Subject Name"
+            />
+          </div>
+          <div className="mt-2">
+            <p className="font-bold text-lg">Duration (in minutes)</p>
+            <input
+              className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
               type="number"
               value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value >= 0) {
+                  setDuration(value);
+                } else {
+                  setDuration(0);
+                }
+              }}
+              min="0"
               placeholder="Enter Duration"
             />
           </div>
           <div className="mt-4">
-            <p>Add New Questions</p>
-            <div className="grid grid-cols-2">
+            <p className="font-bold text-lg">Add New Questions</p>
+            <div className="grid grid-cols-2 gap-4">
               {quizzType.map((quiz, index) => (
                 <div
                   key={index}
-                  className={`py-2 px-4 mt-2 w-3/4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl hover:brightness-90`}
+                  className={`py-2 px-4 mt-2 w-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90`}
                   onClick={() => handleQuizTypeClick(quiz)}
                 >
                   <p className="font-normal">{quiz.name}</p>
@@ -233,34 +257,38 @@ export default function EditQuizPage({
         </div>
 
         <div className="py-4 my-1 mx-5">
-          <h3 className="text-lg font-bold">Saved Questions</h3>
+          <h3 className="text-lg font-bold mb-2">Saved Questions</h3>
           <div className="grid grid-cols-1 gap-4">
             {questions.map((q, index) => (
               <div
                 key={index}
                 className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
               >
-                <p className="text-white-700 font-semibold">{q.type}</p>
-                <p className="text-white-900">{q.question}</p>
+                <p className="text-white-700 font-bold text-xl">{q.type}</p>
+                <p className="text-white-900 border-2 rounded-lg p-2 border-gray-600 mt-2">
+                  {q.question}
+                </p>
                 {q.type === "Multiple Choice" && (
-                  <ul className="list-disc pl-5">
+                  <div className="mt-2">
                     {q.options?.map((option, i) => (
-                      <li key={i} className="text-white-700">
+                      <p key={i} className="bg-gray-600 mb-2 p-2 rounded-lg">
                         {option.text}
-                      </li>
+                      </p>
                     ))}
-                  </ul>
+                  </div>
                 )}
-                <p className="text-white-600 italic">Answer: {q.answer}</p>
-                <div className="flex justify-between">
+                <p className="text-white-600 italic border-2 rounded-lg p-2 border-gray-600 mt-2 ">
+                  Answer : {q.answer}
+                </p>
+                <div className="flex justify-between mt-4">
                   <button
-                    className="text-red-500 hover:text-red-700"
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     onClick={() => handleDeleteQuestion(index)}
                   >
                     Delete
                   </button>
                   <button
-                    className="text-blue-500 hover:text-blue-700"
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     onClick={() => handleUpdateQuestion(index)}
                   >
                     Update
@@ -356,6 +384,13 @@ export default function EditQuizPage({
                     onClick={handleSaveQuestion}
                   >
                     {isUpdating ? "Update Question" : "Save Question"}
+                  </button>
+                  <button
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
                   </button>
                 </div>
               </form>

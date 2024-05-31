@@ -62,7 +62,7 @@ export default function QuizzesPage() {
               <p className="text-sm mb-1">Creator: {quiz.creator}</p>
               <p className="text-sm mb-1">Duration: {quiz.duration} minutes</p>
             </div>
-            <button className="mt-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition duration-300">
+            <button className="mt-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-2 px-4 rounded hover:brightness-75">
               Take a quiz
             </button>
           </div>
