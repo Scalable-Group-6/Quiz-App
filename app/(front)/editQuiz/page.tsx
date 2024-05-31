@@ -1,6 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { SetStateAction, useState } from "react";
+import { useState, useEffect } from "react";
 
 interface QuizType {
   name: string;
@@ -19,38 +18,84 @@ interface Question {
 }
 
 const quizzType: QuizType[] = [
-  {
-    name: "Multiple Choice",
-    value: "multiple",
-  },
-  {
-    name: "True or False",
-    value: "truefalse",
-  },
-  {
-    name: "Short Answer",
-    value: "short",
-  },
-  {
-    name: "Fill the Blank",
-    value: "fillblank",
-  },
+  { name: "Multiple Choice", value: "multiple" },
+  { name: "True or False", value: "truefalse" },
+  { name: "Short Answer", value: "short" },
+  { name: "Fill the Blank", value: "fillblank" },
 ];
 
-export default function createQuizPage() {
-  const router = useRouter();
+interface InitialQuiz {
+  subjectName: string;
+  duration: number;
+  description: string;
+  questions: Question[];
+}
+
+const defaultQuiz: InitialQuiz = {
+  subjectName: "Sample Quiz",
+  description: "This is a sample quiz.",
+  duration: 30,
+  questions: [
+    {
+      type: "Multiple Choice",
+      question: "What is the capital of France?",
+      options: [
+        { text: "Paris" },
+        { text: "London" },
+        { text: "Berlin" },
+        { text: "Madrid" },
+      ],
+      answer: "Paris",
+    },
+    {
+      type: "True or False",
+      question: "The Earth is flat.",
+      options: [],
+      answer: "False",
+    },
+    {
+      type: "Short Answer",
+      question: "Who wrote 'Hamlet'?",
+      options: [],
+      answer: "William Shakespeare",
+    },
+    {
+      type: "Fill the Blank",
+      question: "The chemical symbol for water is __.",
+      options: [],
+      answer: "H2O",
+    },
+  ],
+};
+
+export default function EditQuizPage({
+  initialQuiz = defaultQuiz,
+}: {
+  initialQuiz?: InitialQuiz;
+}) {
+  const [subjectName, setSubjectName] = useState(initialQuiz.subjectName);
+  const [description, setDescription] = useState(initialQuiz.description);
+  const [duration, setDuration] = useState(initialQuiz.duration);
+  const [questions, setQuestions] = useState<Question[]>(initialQuiz.questions);
   const [selectedQuizType, setSelectedQuizType] = useState<QuizType | null>(
     null
   );
-  const [subjectName, setSubjectName] = useState("");
-  const [description, setDescription] = useState("");
-  const [duration, setDuration] = useState(0); // You might want to get this from an input field
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<
     MultipleChoiceOption[]
   >([{ text: "" }, { text: "" }, { text: "" }, { text: "" }]);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateIndex, setUpdateIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (initialQuiz) {
+      setSubjectName(initialQuiz.subjectName || "");
+      setDescription(initialQuiz.description || "");
+      setDuration(initialQuiz.duration || 0);
+      setQuestions(initialQuiz.questions || []);
+    }
+  }, [initialQuiz]);
 
   const handleQuizTypeClick = (quizType: QuizType) => {
     setSelectedQuizType(quizType);
@@ -62,6 +107,7 @@ export default function createQuizPage() {
       { text: "" },
       { text: "" },
     ]);
+    setIsUpdating(false);
   };
 
   const closeModal = () => {
@@ -95,7 +141,14 @@ export default function createQuizPage() {
           : undefined,
     };
 
-    setQuestions([...questions, newQuestion]);
+    if (isUpdating && updateIndex !== null) {
+      const updatedQuestions = [...questions];
+      updatedQuestions[updateIndex] = newQuestion;
+      setQuestions(updatedQuestions);
+    } else {
+      setQuestions([...questions, newQuestion]);
+    }
+
     closeModal();
   };
 
@@ -105,33 +158,46 @@ export default function createQuizPage() {
     setMultipleChoiceOptions(newOptions);
   };
 
+  const handleDeleteQuestion = (index: number) => {
+    const newQuestions = questions.filter((_, i) => i !== index);
+    setQuestions(newQuestions);
+  };
+
+  const handleUpdateQuestion = (index: number) => {
+    const questionToUpdate = questions[index];
+    setSelectedQuizType(
+      quizzType.find((q) => q.name === questionToUpdate.type) || null
+    );
+    setCurrentQuestion(questionToUpdate.question);
+    setCurrentAnswer(questionToUpdate.answer);
+    setMultipleChoiceOptions(
+      questionToUpdate.options || [
+        { text: "" },
+        { text: "" },
+        { text: "" },
+        { text: "" },
+      ]
+    );
+    setIsUpdating(true);
+    setUpdateIndex(index);
+  };
+
   const handleSaveQuiz = () => {
-    if (questions.length === 0) {
-      alert("Please add at least one question to save the quiz.");
-      return;
-    }
-
-    // Here you would typically send the quiz data to a backend server.
-    // For this example, we'll just log the quiz data to the console.
-    const quizData = {
-      subject: subjectName,
-      description: description, // You might want to get this from an input field
-      duration: duration, // You might want to get this from an input field
-      questions: questions,
+    const updatedQuiz = {
+      subjectName,
+      duration,
+      questions,
     };
-
-    console.log("Quiz Data:", quizData);
-
-    // Reset the state after saving
-    setQuestions([]);
+    console.log("Updated Quiz: ", updatedQuiz);
+    // Save the updated quiz to the database or handle it accordingly
   };
 
   return (
     <div className="container mx-auto">
       <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
-        <div className="py-4 my-1 mx-5 ">
+        <div className="py-4 my-1 mx-5">
           <span>
-            <p className="text-xl font-bold">Create A New Quiz</p>
+            <p className="text-xl font-bold">Edit Quiz</p>
           </span>
           <div className="mt-2">
             <input
@@ -145,15 +211,15 @@ export default function createQuizPage() {
             />
           </div>
           <div className="mt-2">
-            <p className="font-bold text-lg mb-2">Quiz Descriotion</p>
+            <p className="font-bold text-lg pb-2">Quiz Desripction</p>
             <input
               className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
               type="text"
-              name="description"
-              id="description"
+              name="subjectName"
+              id="subject"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter Quiz Description"
+              placeholder="Enter Subject Name"
             />
           </div>
           <div className="mt-2">
@@ -177,28 +243,22 @@ export default function createQuizPage() {
           <div className="mt-4">
             <p className="font-bold text-lg">Add New Questions</p>
             <div className="grid grid-cols-2 gap-4">
-              {quizzType.map((quiz, index) => {
-                return (
-                  <div
-                    key={index}
-                    className={` py-2 px-4  mt-2 w-full ${
-                      index === quizzType.length
-                        ? ""
-                        : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
-                    }`}
-                    onClick={() => handleQuizTypeClick(quiz)}
-                  >
-                    <p className="font-normal ">{quiz.name}</p>
-                  </div>
-                );
-              })}
+              {quizzType.map((quiz, index) => (
+                <div
+                  key={index}
+                  className={`py-2 px-4 mt-2 w-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90`}
+                  onClick={() => handleQuizTypeClick(quiz)}
+                >
+                  <p className="font-normal">{quiz.name}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         <div className="py-4 my-1 mx-5">
-          <h3 className="text-lg font-bold">Saved Questions</h3>
-          <div className="grid grid-cols-1 gap-4 mt-2">
+          <h3 className="text-lg font-bold mb-2">Saved Questions</h3>
+          <div className="grid grid-cols-1 gap-4">
             {questions.map((q, index) => (
               <div
                 key={index}
@@ -220,24 +280,34 @@ export default function createQuizPage() {
                 <p className="text-white-600 italic border-2 rounded-lg p-2 border-gray-600 mt-2 ">
                   Answer : {q.answer}
                 </p>
+                <div className="flex justify-between mt-4">
+                  <button
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    onClick={() => handleDeleteQuestion(index)}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    onClick={() => handleUpdateQuestion(index)}
+                  >
+                    Update
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex flex-row p-6 my-1 justify-between">
-            <button 
-            onClick={() => router.push("/")}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Back to Dashboard
-            </button>
+        <div className="flex flex-row py-4 my-1 mx-auto">
+          <div className="mx-auto">
             <button
-              onClick={handleSaveQuiz}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              onClick={handleSaveQuiz}
             >
               Save Quiz
             </button>
-          
+          </div>
         </div>
       </div>
 
@@ -313,16 +383,14 @@ export default function createQuizPage() {
                     type="button"
                     onClick={handleSaveQuestion}
                   >
-                    Save Question
+                    {isUpdating ? "Update Question" : "Save Question"}
                   </button>
-                  <button>
-                    <button
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      type="button"
-                      onClick={closeModal}
-                    >
-                      Cancel
-                    </button>
+                  <button
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
                   </button>
                 </div>
               </form>
@@ -362,14 +430,7 @@ export default function createQuizPage() {
                     type="button"
                     onClick={handleSaveQuestion}
                   >
-                    Save Question
-                  </button>
-                  <button
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="button"
-                    onClick={closeModal}
-                  >
-                    Cancel
+                    {isUpdating ? "Update Question" : "Save Question"}
                   </button>
                 </div>
               </form>
@@ -411,14 +472,7 @@ export default function createQuizPage() {
                     type="button"
                     onClick={handleSaveQuestion}
                   >
-                    Save Question
-                  </button>
-                  <button
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="button"
-                    onClick={closeModal}
-                  >
-                    Cancel
+                    {isUpdating ? "Update Question" : "Save Question"}
                   </button>
                 </div>
               </form>
@@ -457,14 +511,7 @@ export default function createQuizPage() {
                     type="button"
                     onClick={handleSaveQuestion}
                   >
-                    Save Question
-                  </button>
-                  <button
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="button"
-                    onClick={closeModal}
-                  >
-                    Cancel
+                    {isUpdating ? "Update Question" : "Save Question"}
                   </button>
                 </div>
               </form>
