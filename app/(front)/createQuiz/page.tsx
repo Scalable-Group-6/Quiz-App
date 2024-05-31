@@ -1,6 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { SetStateAction, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
+// import Skeleton from "react-loading-skeleton"; // Import skeleton loader if using a library
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 interface QuizType {
   name: string;
@@ -126,78 +129,132 @@ export default function createQuizPage() {
     setQuestions([]);
   };
 
+  const [loading, setLoading] = useState(true);
+
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000); // Set loading to false after 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto pb-5">
       <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
-        <div className="py-4 my-1 mx-5 ">
-          <span>
-            <p className="text-xl font-bold">Create A New Quiz</p>
-          </span>
-          <div className="mt-2">
-            <input
-              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              type="text"
-              name="subjectName"
-              id="subject"
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              placeholder="Enter Subject Name"
-            />
-          </div>
-          <div className="mt-2">
-            <p className="font-bold text-lg mb-2">Quiz Descriotion</p>
-            <input
-              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              type="text"
-              name="description"
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter Quiz Description"
-            />
-          </div>
-          <div className="mt-2">
-            <p className="font-bold text-lg">Duration (in minutes)</p>
-            <input
-              className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              type="number"
-              value={duration}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (value >= 0) {
-                  setDuration(value);
-                } else {
-                  setDuration(0);
-                }
-              }}
-              min="0"
-              placeholder="Enter Duration"
-            />
-          </div>
-          <div className="mt-4">
-            <p className="font-bold text-lg">Add New Questions</p>
+        {loading ? (
+          <div className="p-6">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="mb-3">
+                <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                  <Skeleton height={25} width="20%" />
+                </SkeletonTheme>
+                <div className="mt-2">
+                  <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                    <Skeleton height={35} width="100%" />
+                  </SkeletonTheme>
+                </div>
+              </div>
+            ))}
+            <div className="mb-2">
+              <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                <Skeleton height={25} width="20%" />
+              </SkeletonTheme>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              {quizzType.map((quiz, index) => {
-                return (
-                  <div
-                    key={index}
-                    className={` py-2 px-4  mt-2 w-full ${
-                      index === quizzType.length
-                        ? ""
-                        : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
-                    }`}
-                    onClick={() => handleQuizTypeClick(quiz)}
-                  >
-                    <p className="font-normal ">{quiz.name}</p>
-                  </div>
-                );
-              })}
+              {Array.from({ length: 4 }).map((_, index) => (
+                <SkeletonTheme
+                  baseColor="#494A4E"
+                  highlightColor="#727272"
+                  key={index}
+                >
+                  <Skeleton height={33} width="100%" />
+                </SkeletonTheme>
+              ))}
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="py-4 my-1 mx-5 ">
+            <span>
+              <p className="text-xl font-bold">Create A New Quiz</p>
+            </span>
+            <div className="mt-2">
+              <input
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                type="text"
+                name="subjectName"
+                id="subject"
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                placeholder="Enter Subject Name"
+              />
+            </div>
+            <div className="mt-2">
+              <p className="font-bold text-lg mb-2">Quiz Descriotion</p>
+              <input
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                type="text"
+                name="description"
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter Quiz Description"
+              />
+            </div>
+            <div className="mt-2">
+              <p className="font-bold text-lg">Duration (in minutes)</p>
+              <input
+                className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                type="number"
+                value={duration}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (value >= 0) {
+                    setDuration(value);
+                  } else {
+                    setDuration(0);
+                  }
+                }}
+                min="0"
+                placeholder="Enter Duration"
+              />
+            </div>
+            <div className="mt-4">
+              <p className="font-bold text-lg">Add New Questions</p>
+              <div className="grid grid-cols-2 gap-4">
+                {quizzType.map((quiz, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className={` py-2 px-4  mt-2 w-full ${
+                        index === quizzType.length
+                          ? ""
+                          : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
+                      }`}
+                      onClick={() => handleQuizTypeClick(quiz)}
+                    >
+                      <p className="font-normal ">{quiz.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BATAS AKHIR SKELETON  */}
 
         <div className="py-4 my-1 mx-5">
-          <h3 className="text-lg font-bold">Saved Questions</h3>
+          {loading ? (
+            <div className="ml-1">
+              <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                <Skeleton height={25} width="20%" />
+              </SkeletonTheme>
+            </div>
+          ) : (
+            <h3 className="text-lg font-bold">Saved Questions</h3>
+          )}
           <div className="grid grid-cols-1 gap-4 mt-2">
             {questions.map((q, index) => (
               <div
@@ -225,10 +282,22 @@ export default function createQuizPage() {
           </div>
         </div>
 
-        <div className="flex flex-row p-6 my-1 justify-between">
-            <button 
-            onClick={() => router.push("/")}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-x-[600px] p-6">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index}>
+                <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                  <Skeleton height={35} width="100%" />
+                </SkeletonTheme>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-row p-6 my-1 justify-between">
+            <button
+              onClick={() => router.push("/")}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
               Back to Dashboard
             </button>
             <button
@@ -237,8 +306,8 @@ export default function createQuizPage() {
             >
               Save Quiz
             </button>
-          
-        </div>
+          </div>
+        )}
       </div>
 
       {/* POP UP UNTUK ISI QUIZ */}
