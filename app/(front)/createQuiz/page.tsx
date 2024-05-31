@@ -55,6 +55,17 @@ export default function createQuizPage() {
     MultipleChoiceOption[]
   >([{ text: "" }, { text: "" }, { text: "" }, { text: "" }]);
 
+  const [isToggled, setIsToggled] = useState(false);
+
+  const handleToggle = () => {
+    setIsToggled(!isToggled);
+  };
+
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
+
+
+
   const handleQuizTypeClick = (quizType: QuizType) => {
     setSelectedQuizType(quizType);
     setCurrentQuestion("");
@@ -121,6 +132,9 @@ export default function createQuizPage() {
       description: description, // You might want to get this from an input field
       duration: duration, // You might want to get this from an input field
       questions: questions,
+      dateStart: dateStart,
+      dateEnd: dateEnd,
+      deadline: isToggled,
     };
 
     console.log("Quiz Data:", quizData);
@@ -219,6 +233,51 @@ export default function createQuizPage() {
                 min="0"
                 placeholder="Enter Duration"
               />
+            </div>
+            <div className="mt-4">
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  value=""
+                  className="sr-only peer"
+                  onChange={handleToggle}
+                  checked={isToggled}
+                />
+                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span className="ms-3 text-lg font-medium text-gray-900 dark:text-gray-300">
+                  Add Deadline
+                </span>
+              </label>
+            </div>
+            <div
+              className={`mt-2 overflow-hidden transition-all duration-500 ease-in-out ${
+                isToggled ? "max-h-[100px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="flex flex-row justify-between gap-4">
+                <div className="w-full">
+                  <p className="font-medium">Start</p>
+                  <input
+                    type="date"
+                    name="dateStart"
+                    id="dateStart"
+                    value={dateStart}
+                    onChange={(e) => setDateStart(e.target.value)}
+                    className="w-full p-2 rounded bg-gray-700"
+                  />
+                </div>
+                <div className="w-full">
+                  <p className="font-medium">End</p>
+                  <input
+                    type="date"
+                    name="dateEnd"
+                    id="dateEnd"
+                    value={dateEnd}
+                    onChange={(e) => setDateEnd(e.target.value)}
+                    className="w-full p-2 rounded bg-gray-700"
+                  />
+                </div>
+              </div>
             </div>
             <div className="mt-4">
               <p className="font-bold text-lg">Add New Questions</p>
