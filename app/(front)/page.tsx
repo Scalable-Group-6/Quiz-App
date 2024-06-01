@@ -1,5 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+
 const quizz = [
   {
     name: "Quiz Biologi",
@@ -24,11 +28,21 @@ const quizz = [
 ];
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000); // Simulate loading for 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="lg:grid lg:grid-cols-6">
       <div className="lg:col-span-4">
         <div className="flex space-x-4">
-          <div className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2  overflow-hidden p-2 bg-[#1F2128] rounded-3xl shadow-md ">
+          <div className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 overflow-hidden p-2 bg-[#1F2128] rounded-3xl shadow-md ">
             <div className="bg-gradient-to-r from-purple-500 to-blue-500 w-12 grow-0 h-12 rounded-2xl flex items-center justify-center">
               <p className="font-light text-2xl">+</p>
             </div>
@@ -36,7 +50,7 @@ export default function Home() {
               <p className="text-center ">Create Quiz</p>
             </div>
           </div>
-          <div className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 p-2 overflow-hidden  bg-[#1F2128] rounded-3xl shadow-md ">
+          <div className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 p-2 overflow-hidden bg-[#1F2128] rounded-3xl shadow-md ">
             <div className="bg-gradient-to-r from-purple-500 to-blue-500 w-full grow-0 h-full rounded-2xl flex items-center justify-center">
               <p className="">Manage Quiz</p>
             </div>
@@ -45,19 +59,37 @@ export default function Home() {
         <div>
           <p className="mt-4 font-semibold text-md">Top Quiz</p>
           <div className="py-2 px-4 bg-black/5 border-white/5 border rounded-3xl mt-4 backdrop-blur-sm">
-            {quizz.map((quiz, index) => {
-              return (
-                <div
-                  key={index}
-                  className={` py-2 px-4  mt-2 ${index === 
-                    quizz.length-1 ? "" : "border-b-2 border-white/5"
-                  }`}
-                >
-                  <p className="font-semibold ">{quiz.name}</p>
-                  <p className="font-light">{quiz.creator}</p>
-                </div>
-              );
-            })}
+            {loading ? (
+              <div>
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className={`py-2 px-4 mt-2 ${
+                      index === quizz.length - 1 ? "" : "border-b-2 border-white/5"
+                    }`}
+                  >
+                    <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                      <Skeleton height={20} width="50%" />
+                      <Skeleton height={15} width="30%" />
+                    </SkeletonTheme>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              quizz.map((quiz, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={`py-2 px-4 mt-2 ${
+                      index === quizz.length - 1 ? "" : "border-b-2 border-white/5"
+                    }`}
+                  >
+                    <p className="font-semibold">{quiz.name}</p>
+                    <p className="font-light">{quiz.creator}</p>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
