@@ -44,17 +44,22 @@ export default function Home() {
     <div className=" justify-center">
       <div className="w-3/4 mx-auto ">
         <div className="flex space-x-4">
-          <div className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 overflow-hidden p-2 bg-[#1F2128] rounded-3xl shadow-md ">
+          <div
+            onClick={() => router.push("/createQuiz")}
+            className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 overflow-hidden p-2 bg-[#1F2128] rounded-3xl shadow-md "
+          >
             <div className="bg-gradient-to-r from-purple-500 to-blue-500 w-12 grow-0 h-12 rounded-2xl flex items-center justify-center">
               <p className="font-light text-2xl">+</p>
             </div>
             <div className="grow ">
-              <p className="text-center ">Create Quiz</p>
+              <p className="text-center font-bold ">Create Quiz</p>
             </div>
           </div>
-          <div className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 p-2 overflow-hidden bg-[#1F2128] rounded-3xl shadow-md ">
+          <div 
+          onClick={() => router.push("/manageQuiz")}
+          className="w-1/2 hover:brightness-90 flex items-center justify-start space-x-2 p-2 overflow-hidden bg-[#1F2128] rounded-3xl shadow-md ">
             <div className="bg-gradient-to-r from-purple-500 to-blue-500 w-full grow-0 h-full rounded-2xl flex items-center justify-center">
-              <p className="">Manage Quiz</p>
+              <p className="font-bold">Manage Quiz</p>
             </div>
           </div>
         </div>
@@ -97,7 +102,7 @@ export default function Home() {
                     <div className="my-auto">
                       <button
                         onClick={() => router.push("/followingQuiz")}
-                        className="mb-4 mx-auto bg-blue-500 hover:bg-blue-700 rounded-lg p-3"
+                        className="mb-4 mx-auto bg-blue-500 hover:bg-blue-700 rounded-lg p-3 font-bold"
                       >
                         Take Quiz
                       </button>
@@ -109,9 +114,10 @@ export default function Home() {
           </div>
         </div>
         <div className="flex justify-center">
-          <button 
-          onClick={() => router.push("/quizList")}
-          className="mb-4 mx-auto bg-blue-500 hover:bg-blue-700 rounded-lg p-3 mt-6">
+          <button
+            onClick={() => router.push("/quizList")}
+            className="mb-4 mx-auto bg-blue-500 hover:bg-blue-700 rounded-lg p-3 mt-6 font-bold"
+          >
             Choose Another Quiz
           </button>
         </div>
