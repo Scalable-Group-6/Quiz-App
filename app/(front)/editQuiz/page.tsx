@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 interface QuizType {
   name: string;
@@ -29,6 +31,9 @@ interface InitialQuiz {
   duration: number;
   description: string;
   questions: Question[];
+  dateStart: string;
+  dateEnd: string;
+  deadline: boolean;
 }
 
 const defaultQuiz: InitialQuiz = {
@@ -66,6 +71,9 @@ const defaultQuiz: InitialQuiz = {
       answer: "H2O",
     },
   ],
+  dateStart: "",
+  dateEnd: "",
+  deadline: false,
 };
 
 export default function EditQuizPage({
@@ -87,6 +95,10 @@ export default function EditQuizPage({
   >([{ text: "" }, { text: "" }, { text: "" }, { text: "" }]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateIndex, setUpdateIndex] = useState<number | null>(null);
+  const [isToggled, setIsToggled] = useState(initialQuiz.deadline);
+  const [dateStart, setDateStart] = useState(initialQuiz.dateStart);
+  const [dateEnd, setDateEnd] = useState(initialQuiz.dateEnd);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (initialQuiz) {
@@ -94,8 +106,19 @@ export default function EditQuizPage({
       setDescription(initialQuiz.description || "");
       setDuration(initialQuiz.duration || 0);
       setQuestions(initialQuiz.questions || []);
+      setIsToggled(initialQuiz.deadline);
+      setDateStart(initialQuiz.dateStart || "");
+      setDateEnd(initialQuiz.dateEnd || "");
     }
   }, [initialQuiz]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000); // Set loading to false after 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleQuizTypeClick = (quizType: QuizType) => {
     setSelectedQuizType(quizType);
@@ -185,122 +208,248 @@ export default function EditQuizPage({
   const handleSaveQuiz = () => {
     const updatedQuiz = {
       subjectName,
+      description,
       duration,
       questions,
+      dateStart,
+      dateEnd,
+      deadline: isToggled,
     };
     console.log("Updated Quiz: ", updatedQuiz);
     // Save the updated quiz to the database or handle it accordingly
   };
 
-  return (
-    <div className="container mx-auto">
-      <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
-        <div className="py-4 my-1 mx-5">
-          <span>
-            <p className="text-xl font-bold">Edit Quiz</p>
-          </span>
-          <div className="mt-2">
-            <input
-              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              type="text"
-              name="subjectName"
-              id="subject"
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              placeholder="Enter Subject Name"
-            />
-          </div>
-          <div className="mt-2">
-            <p className="font-bold text-lg pb-2">Quiz Desripction</p>
-            <input
-              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              type="text"
-              name="subjectName"
-              id="subject"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter Subject Name"
-            />
-          </div>
-          <div className="mt-2">
-            <p className="font-bold text-lg">Duration (in minutes)</p>
-            <input
-              className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              type="number"
-              value={duration}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (value >= 0) {
-                  setDuration(value);
-                } else {
-                  setDuration(0);
-                }
-              }}
-              min="0"
-              placeholder="Enter Duration"
-            />
-          </div>
-          <div className="mt-4">
-            <p className="font-bold text-lg">Add New Questions</p>
-            <div className="grid grid-cols-2 gap-4">
-              {quizzType.map((quiz, index) => (
-                <div
-                  key={index}
-                  className={`py-2 px-4 mt-2 w-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90`}
-                  onClick={() => handleQuizTypeClick(quiz)}
-                >
-                  <p className="font-normal">{quiz.name}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+  const handleToggle = () => {
+    setIsToggled(!isToggled);
+  };
 
-        <div className="py-4 my-1 mx-5">
-          <h3 className="text-lg font-bold mb-2">Saved Questions</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {questions.map((q, index) => (
-              <div
-                key={index}
-                className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
-              >
-                <p className="text-white-700 font-bold text-xl">{q.type}</p>
-                <p className="text-white-900 border-2 rounded-lg p-2 border-gray-600 mt-2">
-                  {q.question}
-                </p>
-                {q.type === "Multiple Choice" && (
-                  <div className="mt-2">
-                    {q.options?.map((option, i) => (
-                      <p key={i} className="bg-gray-600 mb-2 p-2 rounded-lg">
-                        {option.text}
-                      </p>
-                    ))}
-                  </div>
-                )}
-                <p className="text-white-600 italic border-2 rounded-lg p-2 border-gray-600 mt-2 ">
-                  Answer : {q.answer}
-                </p>
-                <div className="flex justify-between mt-4">
-                  <button
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    onClick={() => handleDeleteQuestion(index)}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    onClick={() => handleUpdateQuestion(index)}
-                  >
-                    Update
-                  </button>
+  return (
+    <div className="container mx-auto pb-5">
+      <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
+        {loading ? (
+          <div className="p-6">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="mb-3">
+                <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                  <Skeleton height={25} width="20%" />
+                </SkeletonTheme>
+                <div className="mt-2">
+                  <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                    <Skeleton height={35} width="100%" />
+                  </SkeletonTheme>
                 </div>
               </div>
             ))}
+            <div className="mb-2">
+              <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                <Skeleton height={25} width="20%" />
+              </SkeletonTheme>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <SkeletonTheme
+                  baseColor="#494A4E"
+                  highlightColor="#727272"
+                  key={index}
+                >
+                  <Skeleton height={33} width="100%" />
+                </SkeletonTheme>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="py-4 my-1 mx-5 ">
+            <span>
+              <p className="text-xl font-bold">Edit Quiz</p>
+            </span>
+            <div className="mt-2">
+              <input
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                type="text"
+                name="subjectName"
+                id="subject"
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                placeholder="Enter Subject Name"
+              />
+            </div>
+            <div className="mt-2">
+              <p className="font-bold text-lg mb-2">Quiz Description</p>
+              <input
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                type="text"
+                name="description"
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter Quiz Description"
+              />
+            </div>
+            <div className="mt-2">
+              <p className="font-bold text-lg">Duration (in minutes)</p>
+              <input
+                className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                type="number"
+                value={duration}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (value >= 0) {
+                    setDuration(value);
+                  } else {
+                    setDuration(0);
+                  }
+                }}
+                min="0"
+                placeholder="Enter Duration"
+              />
+            </div>
+            <div className="mt-4">
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  value=""
+                  className="sr-only peer"
+                  onChange={handleToggle}
+                  checked={isToggled}
+                />
+                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span className="ms-3 text-lg font-medium text-gray-900 dark:text-gray-300">
+                  Add Deadline
+                </span>
+              </label>
+            </div>
+            <div
+              className={`mt-2 overflow-hidden transition-all duration-500 ease-in-out ${
+                isToggled ? "max-h-[100px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="flex flex-row justify-between gap-4">
+                <div className="w-full">
+                  <p className="font-medium">Start</p>
+                  <input
+                    type="date"
+                    name="dateStart"
+                    id="dateStart"
+                    value={dateStart}
+                    onChange={(e) => setDateStart(e.target.value)}
+                    className="w-full p-2 rounded bg-gray-700"
+                  />
+                </div>
+                <div className="w-full">
+                  <p className="font-medium">End</p>
+                  <input
+                    type="date"
+                    name="dateEnd"
+                    id="dateEnd"
+                    value={dateEnd}
+                    onChange={(e) => setDateEnd(e.target.value)}
+                    className="w-full p-2 rounded bg-gray-700"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="font-bold text-lg">Add New Questions</p>
+              <div className="grid grid-cols-2 gap-4">
+                {quizzType.map((quiz, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className={` py-2 px-4  mt-2 w-full ${
+                        index === quizzType.length
+                          ? ""
+                          : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
+                      }`}
+                      onClick={() => handleQuizTypeClick(quiz)}
+                    >
+                      <p className="font-normal ">{quiz.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="py-4 my-1 mx-5">
+          {loading ? (
+            <div className="ml-1">
+              <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                <Skeleton height={25} width="20%" />
+              </SkeletonTheme>
+            </div>
+          ) : (
+            <h3 className="text-lg font-bold">Saved Questions</h3>
+          )}
+          <div className="grid grid-cols-1 gap-4 mt-2">
+            {loading
+              ? Array.from({ length: questions.length }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
+                  >
+                    <SkeletonTheme
+                      baseColor="#494A4E"
+                      highlightColor="#727272"
+                    >
+                      <Skeleton height={25} width="50%" />
+                      <Skeleton height={20} width="80%" />
+                      <Skeleton height={20} width="70%" />
+                    </SkeletonTheme>
+                  </div>
+                ))
+              : questions.map((q, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
+                  >
+                    <p className="text-white-700 font-bold text-xl">{q.type}</p>
+                    <p className="text-white-900 border-2 rounded-lg p-2 border-gray-600 mt-2">
+                      {q.question}
+                    </p>
+                    {q.type === "Multiple Choice" && (
+                      <div className="mt-2">
+                        {q.options?.map((option, i) => (
+                          <p key={i} className="bg-gray-600 mb-2 p-2 rounded-lg">
+                            {option.text}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-white-600 italic border-2 rounded-lg p-2 border-gray-600 mt-2 ">
+                      Answer : {q.answer}
+                    </p>
+                    <div className="flex justify-between mt-4">
+                      <button
+                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        onClick={() => handleDeleteQuestion(index)}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        onClick={() => handleUpdateQuestion(index)}
+                      >
+                        Update
+                      </button>
+                    </div>
+                  </div>
+                ))}
           </div>
         </div>
 
-        <div className="flex flex-row py-4 my-1 mx-auto">
-          <div className="mx-auto">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-x-[600px] p-6">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index}>
+                <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
+                  <Skeleton height={35} width="100%" />
+                </SkeletonTheme>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-row p-6 my-1 justify-between">
             <button
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               onClick={handleSaveQuiz}
@@ -308,10 +457,8 @@ export default function EditQuizPage({
               Save Quiz
             </button>
           </div>
-        </div>
+        )}
       </div>
-
-      {/* POP UP UNTUK ISI QUIZ */}
 
       {selectedQuizType && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -325,8 +472,6 @@ export default function EditQuizPage({
             >
               &times;
             </button>
-
-            {/* MULTIPLE CHOICE FORM */}
 
             {selectedQuizType.value === "multiple" && (
               <form>
@@ -396,8 +541,6 @@ export default function EditQuizPage({
               </form>
             )}
 
-            {/* SHORT ANSWER FORM */}
-
             {selectedQuizType.value === "short" && (
               <form>
                 <div className="mb-4">
@@ -432,11 +575,16 @@ export default function EditQuizPage({
                   >
                     {isUpdating ? "Update Question" : "Save Question"}
                   </button>
+                  <button
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             )}
-
-            {/* TRUE OR FALSE FORM */}
 
             {selectedQuizType.value === "truefalse" && (
               <form>
@@ -474,11 +622,16 @@ export default function EditQuizPage({
                   >
                     {isUpdating ? "Update Question" : "Save Question"}
                   </button>
+                  <button
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             )}
-
-            {/* FILL THE BLANK FORM */}
 
             {selectedQuizType.value === "fillblank" && (
               <form>
@@ -512,6 +665,13 @@ export default function EditQuizPage({
                     onClick={handleSaveQuestion}
                   >
                     {isUpdating ? "Update Question" : "Save Question"}
+                  </button>
+                  <button
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="button"
+                    onClick={closeModal}
+                  >
+                    Cancel
                   </button>
                 </div>
               </form>

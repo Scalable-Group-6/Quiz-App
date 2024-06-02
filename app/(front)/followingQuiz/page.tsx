@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, SetStateAction } from "react";
 
 interface QuizType {
@@ -66,6 +67,8 @@ export default function TakeQuizPage() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>(
     Array(questions.length).fill("")
   );
+
+  const router = useRouter();
 
   useEffect(() => {
     if (timeLeft > 0 && !isQuizFinished) {
@@ -255,17 +258,23 @@ export default function TakeQuizPage() {
                     <h3 className="text-lg font-bold text-white mb-2">
                       Question {index + 1}
                     </h3>
-                    <h2 className="border-2 rounded-lg p-2 border-gray-600">{question.question}</h2>
+                    <h2 className="border-2 rounded-lg p-2 border-gray-600">
+                      {question.question}
+                    </h2>
                     <div className=" flex flex-row justify-between gap-4">
-                      <p className={`w-full rounded-lg p-4 mt-2 ${userAnswers[index]?.toLowerCase()===question.answer.toLowerCase() ? 'bg-green-600' : 'bg-red-600' } `}>
-                        Your answer :{" "}
-                        <span
-                          
-                        >
-                          {userAnswers[index]}
-                        </span>
+                      <p
+                        className={`w-full rounded-lg p-4 mt-2 ${
+                          userAnswers[index]?.toLowerCase() ===
+                          question.answer.toLowerCase()
+                            ? "bg-green-600"
+                            : "bg-red-600"
+                        } `}
+                      >
+                        Your answer : <span>{userAnswers[index]}</span>
                       </p>
-                      <p className="bg-blue-600 w-full rounded-lg p-4 mt-2">Correct answer: {question.answer}</p>
+                      <p className="bg-blue-600 w-full rounded-lg p-4 mt-2">
+                        Correct answer: {question.answer}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -278,11 +287,8 @@ export default function TakeQuizPage() {
               >
                 Restart Quiz
               </button>
-              <button>
-                <a
-                  href="/"
-                  className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
-                >
+              <button onClick={() => router.push("/leaderboard")}>
+                <a className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
                   Finish Quiz
                 </a>
               </button>
