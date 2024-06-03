@@ -1,5 +1,7 @@
 "use client";
 
+import { quiz } from "@/lib/models/quizModel";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
@@ -32,13 +34,29 @@ export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // Simulate loading for 2 seconds
 
-    return () => clearTimeout(timer);
+  const [quizData, setQuizData] = useState<quiz[]>([]);
+
+  console.log(quizData);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,{
+          headers: {
+            "Content-Type": "application/json",
+          },
+        
+        });
+        setQuizData(response.data);
+        // console.log(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching quiz data: ", error);
+      }
+    }
+    fetchData();
   }, []);
+
 
   return (
     <div className=" justify-center">
@@ -72,7 +90,7 @@ export default function Home() {
                   <div
                     key={index}
                     className={`py-2 px-4 mt-2 ${
-                      index === quizz.length - 1
+                      index === quizData.length - 1
                         ? ""
                         : "border-b-2 border-white/5"
                     }`}
@@ -85,19 +103,19 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              quizz.map((quiz, index) => {
+              quizData.map((quiz, index) => {
                 return (
                   <div
                     key={index}
                     className={` flex flex-row justify-between py-2 px-4 mt-2 ${
-                      index === quizz.length - 1
+                      index === quizData.length - 1
                         ? ""
                         : "border-b-2 border-white/5"
                     }`}
                   >
                     <div>
                       <p className="font-semibold">{quiz.name}</p>
-                      <p className="font-light">{quiz.creator}</p>
+                      <p className="font-light">{quiz.creator_id}</p>
                     </div>
                     <div className="my-auto">
                       <button
