@@ -4,56 +4,51 @@ import { SetStateAction, useEffect, useState } from "react";
 // import Skeleton from "react-loading-skeleton"; // Import skeleton loader if using a library
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { question, quiz } from "@/lib/models/quizModel";
+import axios from "axios";
 
 interface QuizType {
   name: string;
   value: string;
 }
 
-interface MultipleChoiceOption {
-  text: string;
-}
-
-interface Question {
-  type: string;
-  question: string;
-  options?: MultipleChoiceOption[];
-  answer: string;
-}
-
 const quizzType: QuizType[] = [
   {
     name: "Multiple Choice",
-    value: "multiple",
+    value: "Multiple Choice",
   },
   {
     name: "True or False",
-    value: "truefalse",
+    value: "True or False",
   },
   {
     name: "Short Answer",
-    value: "short",
+    value: "Short Answer",
   },
   {
     name: "Fill the Blank",
-    value: "fillblank",
+    value: "Fill the Blank",
   },
 ];
 
 export default function createQuizPage() {
+  const [questionsData, setQuestionsData] = useState<question[]>([]);
+
   const router = useRouter();
-  const [selectedQuizType, setSelectedQuizType] = useState<QuizType | null>(
-    null
-  );
+  const [selectedQuizType, setSelectedQuizType] = useState("");
+
   const [subjectName, setSubjectName] = useState("");
-  const [description, setDescription] = useState("");
+  const [quizName, setQuizName] = useState("");
   const [duration, setDuration] = useState(0); // You might want to get this from an input field
-  const [questions, setQuestions] = useState<Question[]>([]);
+  // const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<
-    MultipleChoiceOption[]
-  >([{ text: "" }, { text: "" }, { text: "" }, { text: "" }]);
+  const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+  ]);
 
   const [isToggled, setIsToggled] = useState(false);
 
@@ -64,258 +59,220 @@ export default function createQuizPage() {
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
 
-
-
-  const handleQuizTypeClick = (quizType: QuizType) => {
+  const handleQuizTypeClick = (quizType: string) => {
     setSelectedQuizType(quizType);
     setCurrentQuestion("");
     setCurrentAnswer("");
-    setMultipleChoiceOptions([
-      { text: "" },
-      { text: "" },
-      { text: "" },
-      { text: "" },
-    ]);
+    setMultipleChoiceOptions(["", "", "", ""]);
   };
 
   const closeModal = () => {
-    setSelectedQuizType(null);
+    setSelectedQuizType("");
   };
 
   const handleSaveQuestion = () => {
     if (
       currentQuestion.trim() === "" ||
-      (selectedQuizType?.value !== "multiple" && currentAnswer.trim() === "")
+      (selectedQuizType === "Multiple Choice" && currentAnswer.trim() === "")
     ) {
       alert("Please fill out the question and answer.");
       return;
     }
 
     if (
-      selectedQuizType?.value === "multiple" &&
-      multipleChoiceOptions.some((option) => option.text.trim() === "")
+      selectedQuizType === "Multiple Choice" &&
+      multipleChoiceOptions.some((option) => option.trim() === "")
     ) {
       alert("Please fill out all multiple choice options.");
       return;
     }
 
-    const newQuestion: Question = {
-      type: selectedQuizType?.name ?? "",
-      question: currentQuestion,
-      answer: currentAnswer,
-      options:
-        selectedQuizType?.value === "multiple"
-          ? multipleChoiceOptions
-          : undefined,
-    };
+    if (selectedQuizType === "Multiple Choice") {
+      let newQuestion = {
+        type: "Multiple Choice",
+        question: currentQuestion,
+        options: multipleChoiceOptions,
+        answer: currentAnswer,
+      } as question;
 
-    setQuestions([...questions, newQuestion]);
+      newQuestion.options = multipleChoiceOptions;
+      setQuestionsData([...questionsData, newQuestion]);
+    } else {
+      let newQuestion = {
+        type: selectedQuizType,
+        question: currentQuestion,
+        answer: currentAnswer,
+      } as question;
+
+      setQuestionsData([...questionsData, newQuestion]);
+    }
     closeModal();
   };
 
   const handleMultipleChoiceOptionChange = (index: number, value: string) => {
     const newOptions = [...multipleChoiceOptions];
-    newOptions[index].text = value;
+    newOptions[index] = value;
     setMultipleChoiceOptions(newOptions);
   };
 
-  const handleSaveQuiz = () => {
-    if (questions.length === 0) {
+  const handleSaveQuiz = async () => {
+    if (questionsData.length === 0) {
       alert("Please add at least one question to save the quiz.");
       return;
     }
 
-    // Here you would typically send the quiz data to a backend server.
-    // For this example, we'll just log the quiz data to the console.
     const quizData = {
       subject: subjectName,
-      description: description, // You might want to get this from an input field
-      duration: duration, // You might want to get this from an input field
-      questions: questions,
-      dateStart: dateStart,
-      dateEnd: dateEnd,
-      deadline: isToggled,
-    };
+      duration: duration * 60,
+      questions: questionsData,
+      start_date: dateStart,
+      end_date: dateEnd,
+      // _id: "",
+      name: quizName,
+      creator_id: "w4ertuyitfrdg",
+    } as quiz;
 
-    console.log("Quiz Data:", quizData);
-
-    // Reset the state after saving
-    setQuestions([]);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,
+        JSON.stringify(quizData),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('Quiz submitted successfully:', response.data);
+      // Handle the response as needed
+    } catch (error) {
+      console.error('Error submitting quiz data:', error);
+    }
+    console.log(quizData);
+    setQuestionsData([]);
   };
-
-  const [loading, setLoading] = useState(true);
-
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // Set loading to false after 2 seconds
-
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="container mx-auto pb-5">
       <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto p-6">
-        {loading ? (
-          <div className="p-6">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="mb-3">
-                <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
-                  <Skeleton height={25} width="20%" />
-                </SkeletonTheme>
-                <div className="mt-2">
-                  <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
-                    <Skeleton height={35} width="100%" />
-                  </SkeletonTheme>
-                </div>
-              </div>
-            ))}
-            <div className="mb-2">
-              <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
-                <Skeleton height={25} width="20%" />
-              </SkeletonTheme>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <SkeletonTheme
-                  baseColor="#494A4E"
-                  highlightColor="#727272"
-                  key={index}
-                >
-                  <Skeleton height={33} width="100%" />
-                </SkeletonTheme>
-              ))}
-            </div>
+        <div className="py-4 my-1 mx-5 ">
+          <span>
+            <p className="text-xl font-bold">Create A New Quiz</p>
+          </span>
+          <div className="mt-2">
+            <input
+              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+              type="text"
+              name="subjectName"
+              id="subject"
+              value={subjectName}
+              onChange={(e) => setSubjectName(e.target.value)}
+              placeholder="Enter Subject Name"
+            />
           </div>
-        ) : (
-          <div className="py-4 my-1 mx-5 ">
-            <span>
-              <p className="text-xl font-bold">Create A New Quiz</p>
-            </span>
-            <div className="mt-2">
+          <div className="mt-2">
+            <p className="font-bold text-lg mb-2">Quiz Name</p>
+            <input
+              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+              type="text"
+              name="quizName"
+              id="quizName"
+              value={quizName}
+              onChange={(e) => setQuizName(e.target.value)}
+              placeholder="Enter Quiz Name"
+            />
+          </div>
+          <div className="mt-2">
+            <p className="font-bold text-lg">Duration (in minutes)</p>
+            <input
+              className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+              type="number"
+              value={duration}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value >= 0) {
+                  setDuration(value);
+                } else {
+                  setDuration(0);
+                }
+              }}
+              min="0"
+              placeholder="Enter Duration"
+            />
+          </div>
+          <div className="mt-4">
+            <label className="inline-flex items-center cursor-pointer">
               <input
-                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-                type="text"
-                name="subjectName"
-                id="subject"
-                value={subjectName}
-                onChange={(e) => setSubjectName(e.target.value)}
-                placeholder="Enter Subject Name"
+                type="checkbox"
+                value=""
+                className="sr-only peer"
+                onChange={handleToggle}
+                checked={isToggled}
               />
-            </div>
-            <div className="mt-2">
-              <p className="font-bold text-lg mb-2">Quiz Descriotion</p>
-              <input
-                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-                type="text"
-                name="description"
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter Quiz Description"
-              />
-            </div>
-            <div className="mt-2">
-              <p className="font-bold text-lg">Duration (in minutes)</p>
-              <input
-                className="mt-2 w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-                type="number"
-                value={duration}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  if (value >= 0) {
-                    setDuration(value);
-                  } else {
-                    setDuration(0);
-                  }
-                }}
-                min="0"
-                placeholder="Enter Duration"
-              />
-            </div>
-            <div className="mt-4">
-              <label className="inline-flex items-center cursor-pointer">
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              <span className="ms-3 text-lg font-medium text-gray-900 dark:text-gray-300">
+                Add Deadline
+              </span>
+            </label>
+          </div>
+          <div
+            className={`mt-2 overflow-hidden transition-all duration-500 ease-in-out ${
+              isToggled ? "max-h-[100px] opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="flex flex-row justify-between gap-4">
+              <div className="w-full">
+                <p className="font-medium">Start</p>
                 <input
-                  type="checkbox"
-                  value=""
-                  className="sr-only peer"
-                  onChange={handleToggle}
-                  checked={isToggled}
+                  type="date"
+                  name="dateStart"
+                  id="dateStart"
+                  value={dateStart}
+                  onChange={(e) => setDateStart(e.target.value)}
+                  className="w-full p-2 rounded bg-gray-700"
                 />
-                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                <span className="ms-3 text-lg font-medium text-gray-900 dark:text-gray-300">
-                  Add Deadline
-                </span>
-              </label>
-            </div>
-            <div
-              className={`mt-2 overflow-hidden transition-all duration-500 ease-in-out ${
-                isToggled ? "max-h-[100px] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <div className="flex flex-row justify-between gap-4">
-                <div className="w-full">
-                  <p className="font-medium">Start</p>
-                  <input
-                    type="date"
-                    name="dateStart"
-                    id="dateStart"
-                    value={dateStart}
-                    onChange={(e) => setDateStart(e.target.value)}
-                    className="w-full p-2 rounded bg-gray-700"
-                  />
-                </div>
-                <div className="w-full">
-                  <p className="font-medium">End</p>
-                  <input
-                    type="date"
-                    name="dateEnd"
-                    id="dateEnd"
-                    value={dateEnd}
-                    onChange={(e) => setDateEnd(e.target.value)}
-                    className="w-full p-2 rounded bg-gray-700"
-                  />
-                </div>
               </div>
-            </div>
-            <div className="mt-4">
-              <p className="font-bold text-lg">Add New Questions</p>
-              <div className="grid grid-cols-2 gap-4">
-                {quizzType.map((quiz, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className={` py-2 px-4  mt-2 w-full ${
-                        index === quizzType.length
-                          ? ""
-                          : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
-                      }`}
-                      onClick={() => handleQuizTypeClick(quiz)}
-                    >
-                      <p className="font-normal ">{quiz.name}</p>
-                    </div>
-                  );
-                })}
+              <div className="w-full">
+                <p className="font-medium">End</p>
+                <input
+                  type="date"
+                  name="dateEnd"
+                  id="dateEnd"
+                  value={dateEnd}
+                  onChange={(e) => setDateEnd(e.target.value)}
+                  className="w-full p-2 rounded bg-gray-700"
+                />
               </div>
             </div>
           </div>
-        )}
+          <div className="mt-4">
+            <p className="font-bold text-lg">Add New Questions</p>
+            <div className="grid grid-cols-2 gap-4">
+              {quizzType.map((quiz, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={` py-2 px-4  mt-2 w-full ${
+                      index === quizzType.length
+                        ? ""
+                        : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
+                    }`}
+                    onClick={() => handleQuizTypeClick(quiz.value)}
+                  >
+                    <p className="font-normal ">{quiz.name}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* BATAS AKHIR SKELETON  */}
 
         <div className="py-4 my-1 mx-5">
-          {loading ? (
-            <div className="ml-1">
-              <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
-                <Skeleton height={25} width="20%" />
-              </SkeletonTheme>
-            </div>
-          ) : (
-            <h3 className="text-lg font-bold">Saved Questions</h3>
-          )}
+          <h3 className="text-lg font-bold">Saved Questions</h3>
+
           <div className="grid grid-cols-1 gap-4 mt-2">
-            {questions.map((q, index) => (
+            {questionsData.map((q, index) => (
               <div
                 key={index}
                 className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
@@ -328,7 +285,7 @@ export default function createQuizPage() {
                   <div className="mt-2">
                     {q.options?.map((option, i) => (
                       <p key={i} className="bg-gray-600 mb-2 p-2 rounded-lg">
-                        {option.text}
+                        {option}
                       </p>
                     ))}
                   </div>
@@ -341,32 +298,20 @@ export default function createQuizPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-2 gap-x-[600px] p-6">
-            {Array.from({ length: 2 }).map((_, index) => (
-              <div key={index}>
-                <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
-                  <Skeleton height={35} width="100%" />
-                </SkeletonTheme>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-row p-6 my-1 justify-between">
-            <button
-              onClick={() => router.push("/")}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              Back to Dashboard
-            </button>
-            <button
-              onClick={handleSaveQuiz}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              Save Quiz
-            </button>
-          </div>
-        )}
+        <div className="flex flex-row p-6 my-1 justify-between">
+          <button
+            onClick={() => router.push("/")}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Back to Dashboard
+          </button>
+          <button
+            onClick={handleSaveQuiz}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Save Quiz
+          </button>
+        </div>
       </div>
 
       {/* POP UP UNTUK ISI QUIZ */}
@@ -375,7 +320,7 @@ export default function createQuizPage() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded-lg shadow-lg relative w-2/4">
             <h2 className="text-xl font-bold mb-4 text-gray-700">
-              {selectedQuizType.name} Question
+              {selectedQuizType} Question
             </h2>
             <button
               className="absolute top-2 right-2 text-xl font-bold"
@@ -386,7 +331,7 @@ export default function createQuizPage() {
 
             {/* MULTIPLE CHOICE FORM */}
 
-            {selectedQuizType.value === "multiple" && (
+            {selectedQuizType === "Multiple Choice" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -409,7 +354,7 @@ export default function createQuizPage() {
                       <input
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                         type="text"
-                        value={option.text}
+                        value={option}
                         onChange={(e) =>
                           handleMultipleChoiceOptionChange(
                             index,
@@ -458,7 +403,7 @@ export default function createQuizPage() {
 
             {/* SHORT ANSWER FORM */}
 
-            {selectedQuizType.value === "short" && (
+            {selectedQuizType === "Short Answer" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -505,7 +450,7 @@ export default function createQuizPage() {
 
             {/* TRUE OR FALSE FORM */}
 
-            {selectedQuizType.value === "truefalse" && (
+            {selectedQuizType === "True or False" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -554,7 +499,7 @@ export default function createQuizPage() {
 
             {/* FILL THE BLANK FORM */}
 
-            {selectedQuizType.value === "fillblank" && (
+            {selectedQuizType === "Fill the Blank" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
