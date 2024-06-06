@@ -36,6 +36,16 @@ export default function Home() {
 
 
   const [quizData, setQuizData] = useState<quiz[]>([]);
+  console.log(quizData);
+  const handleTakwQuiz = (id:string) => {
+    const quiz = quizData.find((quiz) => quiz._id === id);
+    
+    if(!quiz){
+      console.error("Quiz not found");
+    }
+    
+    router.push(`/followingQuiz/${id}`);
+  }
 
   console.log(quizData);
   useEffect(() => {
@@ -119,7 +129,7 @@ export default function Home() {
                     </div>
                     <div className="my-auto">
                       <button
-                        onClick={() => router.push("/followingQuiz")}
+                        onClick={() => handleTakwQuiz(quiz._id)}
                         className="mb-4 mx-auto bg-blue-500 hover:bg-blue-700 rounded-lg p-3 font-bold"
                       >
                         Take Quiz

@@ -1,167 +1,127 @@
 "use client";
 import { useState, useEffect } from "react";
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import { question, quiz } from "@/lib/models/quizModel";
 import "react-loading-skeleton/dist/skeleton.css";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { secondToMinuet } from "@/lib/utils";
 
 interface QuizType {
   name: string;
   value: string;
 }
 
-interface MultipleChoiceOption {
-  text: string;
-}
-
-interface Question {
-  type: string;
-  question: string;
-  options?: MultipleChoiceOption[];
-  answer: string;
-}
-
 const quizzType: QuizType[] = [
-  { name: "Multiple Choice", value: "multiple" },
-  { name: "True or False", value: "truefalse" },
-  { name: "Short Answer", value: "short" },
-  { name: "Fill the Blank", value: "fillblank" },
+  { name: "Multiple Choice", value: "Multiple Choice" },
+  { name: "True or False", value: "True Or False" },
+  { name: "Short Answer", value: "Short Answer" },
+  { name: "Fill the Blank", value: "Fill the Blank" },
 ];
 
-interface InitialQuiz {
-  subjectName: string;
-  duration: number;
-  description: string;
-  questions: Question[];
-  dateStart: string;
-  dateEnd: string;
-  deadline: boolean;
-}
+const EditQuizPage = ({ quizId }: { quizId: string }) => {
+  const router = useRouter();
 
-const defaultQuiz: InitialQuiz = {
-  subjectName: "Sample Quiz",
-  description: "This is a sample quiz.",
-  duration: 30,
-  questions: [
-    {
-      type: "Multiple Choice",
-      question: "What is the capital of France?",
-      options: [
-        { text: "Paris" },
-        { text: "London" },
-        { text: "Berlin" },
-        { text: "Madrid" },
-      ],
-      answer: "Paris",
-    },
-    {
-      type: "True or False",
-      question: "The Earth is flat.",
-      options: [],
-      answer: "False",
-    },
-    {
-      type: "Short Answer",
-      question: "Who wrote 'Hamlet'?",
-      options: [],
-      answer: "William Shakespeare",
-    },
-    {
-      type: "Fill the Blank",
-      question: "The chemical symbol for water is __.",
-      options: [],
-      answer: "H2O",
-    },
-  ],
-  dateStart: "",
-  dateEnd: "",
-  deadline: false,
-};
-
-export default function EditQuizPage({
-  initialQuiz = defaultQuiz,
-}: {
-  initialQuiz?: InitialQuiz;
-}) {
-  const [subjectName, setSubjectName] = useState(initialQuiz.subjectName);
-  const [description, setDescription] = useState(initialQuiz.description);
-  const [duration, setDuration] = useState(initialQuiz.duration);
-  const [questions, setQuestions] = useState<Question[]>(initialQuiz.questions);
-  const [selectedQuizType, setSelectedQuizType] = useState<QuizType | null>(
-    null
-  );
-  const [currentQuestion, setCurrentQuestion] = useState("");
-  const [currentAnswer, setCurrentAnswer] = useState("");
-  const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<
-    MultipleChoiceOption[]
-  >([{ text: "" }, { text: "" }, { text: "" }, { text: "" }]);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [updateIndex, setUpdateIndex] = useState<number | null>(null);
-  const [isToggled, setIsToggled] = useState(initialQuiz.deadline);
-  const [dateStart, setDateStart] = useState(initialQuiz.dateStart);
-  const [dateEnd, setDateEnd] = useState(initialQuiz.dateEnd);
+  const [quizData, setQuizData] = useState<quiz | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log(quizData);
+  console.log(`${process.env.NEXT_PUBLIC_QUIZ_API_URL}/${quizId}`);
+
   useEffect(() => {
-    if (initialQuiz) {
-      setSubjectName(initialQuiz.subjectName || "");
-      setDescription(initialQuiz.description || "");
-      setDuration(initialQuiz.duration || 0);
-      setQuestions(initialQuiz.questions || []);
-      setIsToggled(initialQuiz.deadline);
-      setDateStart(initialQuiz.dateStart || "");
-      setDateEnd(initialQuiz.dateEnd || "");
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_QUIZ_API_URL}/${quizId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log(response.data);
+        setQuizData(response.data);
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching quiz data: ", error);
+      }
+    };
+
+    fetchData();
+  }, [quizId]);
+
+  const [subjectName, setSubjectName] = useState("");
+  const [quizName, setQuizName] = useState("");
+  const [duration, setDuration] = useState(0);
+  const [questions, setQuestions] = useState<question[]>([]);
+  const [dateStart, setDateStart] = useState<Date | null>(null);
+  const [dateEnd, setDateEnd] = useState<Date | null>(null);
+  const [selectedQuizType, setSelectedQuizType] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+  ]);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateIndex, setUpdateIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (quizData) {
+      setSubjectName(quizData.subject);
+      setQuizName(quizData.name);
+      setDuration(secondToMinuet(quizData.duration));
+      setQuestions(quizData.questions);
+      setDateStart(quizData.start_time); // Convert the string to a Date object
+      setDateEnd(quizData.end_time);
+      if (quizData.start_time != null) {
+        setDateStart(new Date(quizData.start_time)); // Convert the string to a Date object
+        setDateEnd(new Date(quizData.end_time));
+        setIsToggled(true);
+      }
     }
-  }, [initialQuiz]);
+  }, [quizData]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // Set loading to false after 2 seconds
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleQuizTypeClick = (quizType: QuizType) => {
+  const handleQuizTypeClick = (quizType: string) => {
     setSelectedQuizType(quizType);
     setCurrentQuestion("");
     setCurrentAnswer("");
-    setMultipleChoiceOptions([
-      { text: "" },
-      { text: "" },
-      { text: "" },
-      { text: "" },
-    ]);
+    if (quizType === "Multiple Choice") {
+      setMultipleChoiceOptions(["", "", "", ""]);
+    }
     setIsUpdating(false);
   };
 
   const closeModal = () => {
-    setSelectedQuizType(null);
+    setSelectedQuizType("");
   };
 
   const handleSaveQuestion = () => {
     if (
-      currentQuestion.trim() === "" ||
-      (selectedQuizType?.value !== "multiple" && currentAnswer.trim() === "")
+      !currentQuestion.trim() ||
+      (!currentAnswer.trim() && selectedQuizType !== "Multiple Choice")
     ) {
       alert("Please fill out the question and answer.");
       return;
     }
 
     if (
-      selectedQuizType?.value === "multiple" &&
-      multipleChoiceOptions.some((option) => option.text.trim() === "")
+      selectedQuizType === "Multiple Choice" &&
+      multipleChoiceOptions.some((option) => !option.trim())
     ) {
       alert("Please fill out all multiple choice options.");
       return;
     }
 
-    const newQuestion: Question = {
-      type: selectedQuizType?.name ?? "",
+    const newQuestion: question = {
+      type: selectedQuizType,
       question: currentQuestion,
       answer: currentAnswer,
       options:
-        selectedQuizType?.value === "multiple"
-          ? multipleChoiceOptions
-          : undefined,
+        selectedQuizType === "Multiple Choice" ? multipleChoiceOptions : undefined,
     };
 
     if (isUpdating && updateIndex !== null) {
@@ -171,53 +131,59 @@ export default function EditQuizPage({
     } else {
       setQuestions([...questions, newQuestion]);
     }
-
     closeModal();
   };
 
   const handleMultipleChoiceOptionChange = (index: number, value: string) => {
     const newOptions = [...multipleChoiceOptions];
-    newOptions[index].text = value;
+    newOptions[index] = value;
     setMultipleChoiceOptions(newOptions);
-  };
-
-  const handleDeleteQuestion = (index: number) => {
-    const newQuestions = questions.filter((_, i) => i !== index);
-    setQuestions(newQuestions);
   };
 
   const handleUpdateQuestion = (index: number) => {
     const questionToUpdate = questions[index];
-    setSelectedQuizType(
-      quizzType.find((q) => q.name === questionToUpdate.type) || null
-    );
+    setSelectedQuizType(questionToUpdate.type);
     setCurrentQuestion(questionToUpdate.question);
     setCurrentAnswer(questionToUpdate.answer);
-    setMultipleChoiceOptions(
-      questionToUpdate.options || [
-        { text: "" },
-        { text: "" },
-        { text: "" },
-        { text: "" },
-      ]
-    );
+    if (questionToUpdate.options) {
+      setMultipleChoiceOptions(questionToUpdate.options);
+    }
     setIsUpdating(true);
     setUpdateIndex(index);
   };
 
-  const handleSaveQuiz = () => {
-    const updatedQuiz = {
-      subjectName,
-      description,
-      duration,
-      questions,
-      dateStart,
-      dateEnd,
-      deadline: isToggled,
-    };
-    console.log("Updated Quiz: ", updatedQuiz);
-    // Save the updated quiz to the database or handle it accordingly
+  const handleDeleteQuestion = (index: number) => {
+    const updatedQuestions = questions.filter((_, idx) => idx !== index);
+    setQuestions(updatedQuestions);
   };
+
+  const handleSaveQuiz = async () => {
+    const updatedQuiz = {
+      subject: subjectName,
+      name: quizName,
+      duration: duration * 60,
+      questions: questions,
+      start_time: dateStart,
+      end_time: dateEnd,
+    };
+    try {
+      const response = await axios.patch(
+        `${process.env.NEXT_PUBLIC_QUIZ_API_URL}/${quizId}`,
+        updatedQuiz,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Quiz updated successfully:", response.data);
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+    }
+
+    router.push(`/`);
+  };
+  const [isToggled, setIsToggled] = useState(false);
 
   const handleToggle = () => {
     setIsToggled(!isToggled);
@@ -278,10 +244,10 @@ export default function EditQuizPage({
               <input
                 className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
                 type="text"
-                name="description"
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                name="quizName"
+                id="quizName"
+                value={quizName}
+                onChange={(e) => setQuizName(e.target.value)}
                 placeholder="Enter Quiz Description"
               />
             </div>
@@ -305,13 +271,24 @@ export default function EditQuizPage({
             </div>
             <div className="mt-4">
               <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  value=""
-                  className="sr-only peer"
-                  onChange={handleToggle}
-                  checked={isToggled}
-                />
+                {isToggled && (dateStart != null) ? (
+                  <input
+                    type="checkbox"
+                    value=""
+                    className="sr-only peer"
+                    onChange={handleToggle}
+                    checked={isToggled}
+                    disabled={true}
+                  />
+                ) : (
+                  <input
+                    type="checkbox"
+                    value=""
+                    className="sr-only peer"
+                    onChange={handleToggle}
+                    checked={isToggled}
+                  />
+                )}
                 <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                 <span className="ms-3 text-lg font-medium text-gray-900 dark:text-gray-300">
                   Add Deadline
@@ -330,8 +307,10 @@ export default function EditQuizPage({
                     type="date"
                     name="dateStart"
                     id="dateStart"
-                    value={dateStart}
-                    onChange={(e) => setDateStart(e.target.value)}
+                    value={
+                      dateStart ? dateStart.toISOString().substring(0, 10) : ""
+                    }
+                    onChange={(e) => setDateStart(new Date(e.target.value))}
                     className="w-full p-2 rounded bg-gray-700"
                   />
                 </div>
@@ -341,8 +320,10 @@ export default function EditQuizPage({
                     type="date"
                     name="dateEnd"
                     id="dateEnd"
-                    value={dateEnd}
-                    onChange={(e) => setDateEnd(e.target.value)}
+                    value={
+                      dateEnd ? dateEnd.toISOString().substring(0, 10) : ""
+                    }
+                    onChange={(e) => setDateEnd(new Date(e.target.value))}
                     className="w-full p-2 rounded bg-gray-700"
                   />
                 </div>
@@ -360,7 +341,7 @@ export default function EditQuizPage({
                           ? ""
                           : "bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg hover:brightness-90"
                       }`}
-                      onClick={() => handleQuizTypeClick(quiz)}
+                      onClick={() => handleQuizTypeClick(quiz.value)}
                     >
                       <p className="font-normal ">{quiz.name}</p>
                     </div>
@@ -388,10 +369,7 @@ export default function EditQuizPage({
                     key={index}
                     className="bg-[#2A2D36] text-white p-4 rounded-lg shadow-md"
                   >
-                    <SkeletonTheme
-                      baseColor="#494A4E"
-                      highlightColor="#727272"
-                    >
+                    <SkeletonTheme baseColor="#494A4E" highlightColor="#727272">
                       <Skeleton height={25} width="50%" />
                       <Skeleton height={20} width="80%" />
                       <Skeleton height={20} width="70%" />
@@ -410,8 +388,11 @@ export default function EditQuizPage({
                     {q.type === "Multiple Choice" && (
                       <div className="mt-2">
                         {q.options?.map((option, i) => (
-                          <p key={i} className="bg-gray-600 mb-2 p-2 rounded-lg">
-                            {option.text}
+                          <p
+                            key={i}
+                            className="bg-gray-600 mb-2 p-2 rounded-lg"
+                          >
+                            {option}
                           </p>
                         ))}
                       </div>
@@ -464,7 +445,7 @@ export default function EditQuizPage({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded-lg shadow-lg relative w-2/4">
             <h2 className="text-xl font-bold mb-4 text-gray-700">
-              {selectedQuizType.name} Question
+              {selectedQuizType} Question
             </h2>
             <button
               className="absolute top-2 right-2 text-xl font-bold"
@@ -473,7 +454,7 @@ export default function EditQuizPage({
               &times;
             </button>
 
-            {selectedQuizType.value === "multiple" && (
+            {selectedQuizType === "Multiple Choice" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -496,7 +477,7 @@ export default function EditQuizPage({
                       <input
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                         type="text"
-                        value={option.text}
+                        value={option}
                         onChange={(e) =>
                           handleMultipleChoiceOptionChange(
                             index,
@@ -541,7 +522,7 @@ export default function EditQuizPage({
               </form>
             )}
 
-            {selectedQuizType.value === "short" && (
+            {selectedQuizType === "Short Answer" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -586,7 +567,7 @@ export default function EditQuizPage({
               </form>
             )}
 
-            {selectedQuizType.value === "truefalse" && (
+            {selectedQuizType === "True or False" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -633,7 +614,7 @@ export default function EditQuizPage({
               </form>
             )}
 
-            {selectedQuizType.value === "fillblank" && (
+            {selectedQuizType === "Fill The Blank" && (
               <form>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -681,4 +662,6 @@ export default function EditQuizPage({
       )}
     </div>
   );
-}
+};
+
+export default EditQuizPage;

@@ -56,8 +56,8 @@ export default function createQuizPage() {
     setIsToggled(!isToggled);
   };
 
-  const [dateStart, setDateStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
+  const [dateStart, setDateStart] = useState<Date | null>(null);
+  const [dateEnd, setDateEnd] = useState<Date | null>(null);
 
   const handleQuizTypeClick = (quizType: string) => {
     setSelectedQuizType(quizType);
@@ -121,31 +121,32 @@ export default function createQuizPage() {
       return;
     }
 
+
     const quizData = {
+      // _id: "", 
       subject: subjectName,
       duration: duration * 60,
       questions: questionsData,
-      start_date: dateStart,
-      end_date: dateEnd,
-      // _id: "",
+      start_time: dateStart,
+      end_time: dateEnd,
       name: quizName,
       creator_id: "w4ertuyitfrdg",
     } as quiz;
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,
+        `${process.env.NEXT_PUBLIC_GRADING_API_URL}`,
         JSON.stringify(quizData),
         {
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
-      console.log('Quiz submitted successfully:', response.data);
+      console.log("Quiz submitted successfully:", response.data);
       // Handle the response as needed
     } catch (error) {
-      console.error('Error submitting quiz data:', error);
+      console.error("Error submitting quiz data:", error);
     }
     console.log(quizData);
     setQuestionsData([]);
@@ -226,8 +227,14 @@ export default function createQuizPage() {
                   type="date"
                   name="dateStart"
                   id="dateStart"
-                  value={dateStart}
-                  onChange={(e) => setDateStart(e.target.value)}
+                  value={
+                    dateStart ? dateStart.toISOString().substring(0, 10) : ""
+                  }
+                  onChange={(e) =>
+                    setDateStart(
+                      e.target.value ? new Date(e.target.value) : null
+                    )
+                  }
                   className="w-full p-2 rounded bg-gray-700"
                 />
               </div>
@@ -237,8 +244,10 @@ export default function createQuizPage() {
                   type="date"
                   name="dateEnd"
                   id="dateEnd"
-                  value={dateEnd}
-                  onChange={(e) => setDateEnd(e.target.value)}
+                  value={dateEnd ? dateEnd.toISOString().substring(0, 10) : ""}
+                  onChange={(e) =>
+                    setDateEnd(e.target.value ? new Date(e.target.value) : null)
+                  }
                   className="w-full p-2 rounded bg-gray-700"
                 />
               </div>
