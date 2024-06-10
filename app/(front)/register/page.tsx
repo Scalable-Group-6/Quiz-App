@@ -1,10 +1,47 @@
 "use client";
-import { useState } from "react";
+import { User } from "@/lib/models/UserModel";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function Register() {
+  const [userData, setUserData] = useState<User[]>([]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    e.preventDefault();
+    
+    // const userData = {
+    //   email,
+    //   password,
+    //   username,
+    //   _id: "",
+    // } as User;
+
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,
+        JSON.stringify(userData),
+
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error registering user: ", error);
+    }
+  };
 
   return (
     <div className="container mx-auto my-auto">
@@ -29,33 +66,43 @@ export default function Register() {
               />
             </div>
             <div className="mb-3">
-            <label className="block text-white pb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              required
-            />
-          </div>
-          <div className="mb-5">
-            <label className="block text-white pb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
-              required
-            />
-          </div>
+              <label className="block text-white pb-1">Username</label>
+              <input
+                type="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="block text-white pb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                required
+              />
+            </div>
+            <div className="mb-5">
+              <label className="block text-white pb-1">Confirm Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full p-2 rounded bg-gray-700 focus:outline-none focus:border-black focus:ring-black focus:outline-gray-600"
+                required
+              />
+            </div>
             <button
               type="submit"
               className="w-full p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded"
+              onClick={handleSubmit}
             >
               Register
             </button>
           </form>
-        
         </div>
       </div>
     </div>

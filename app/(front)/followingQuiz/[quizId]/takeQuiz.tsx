@@ -1,83 +1,63 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, SetStateAction } from "react";
+import { quiz, question } from "@/lib/models/quizModel";
+import { grading } from "@/lib/models/gradingModel";
+import axios from "axios";
 
-interface QuizType {
-  name: string;
-  value: string;
-}
-
-interface MultipleChoiceOption {
-  text: string;
-}
-
-interface Question {
-  type: string;
-  question: string;
-  options?: MultipleChoiceOption[];
-  answer: string;
-}
-
-export default function TakeQuizPage() {
-  const [questions] = useState<Question[]>([
-    {
-      type: "Multiple Choice",
-      question: "rama suka siapa?",
-      options: [
-        { text: "rehan" },
-        { text: "ira" },
-        { text: "angie" },
-        { text: "macbook" },
-      ],
-      answer: "ira",
-    },
-    {
-      type: "True or False",
-      question: "kiki ganteng?",
-      options: [{ text: "True" }, { text: "False" }],
-      answer: "False",
-    },
-    {
-      type: "Fill the Blank",
-      question: "doni __ kiki",
-      answer: "suka",
-    },
-    {
-      type: "Short Answer",
-      question: "kata kata yang keluar dari mulut rama adalah?",
-      answer: "hmm",
-    },
-    {
-      type: "Multiple Choice",
-      question: "apa itu?",
-      options: [
-        { text: "itu" },
-        { text: "apa" },
-        { text: "apa itu" },
-        { text: "itu apa" },
-      ],
-      answer: "ira",
-    },
-  ]);
-
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
-  const [isQuizFinished, setIsQuizFinished] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 menit waktu pengerjaan
-  const [selectedOptions, setSelectedOptions] = useState<string[]>(
-    Array(questions.length).fill("")
-  );
+const TakeQuizPage = ({ quizId }: { quizId: string }) => {
+  const [quizData, setQuizData] = useState<quiz | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isTimeLeftFetched, setIsTimeLeftFetched] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
-    if (timeLeft > 0 && !isQuizFinished) {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_QUIZ_API_URL}/${quizId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.data && response.data.questions) {
+          console.log(response.data.questions);
+          console.log(response.data.duration);
+          setQuizData(response.data);
+          setQuestions(response.data.questions);
+          setSelectedOptions(Array(response.data.questions.length).fill(""));
+          setUserAnswers(Array(response.data.questions.length).fill(""));
+          setTimeLeft(response.data.duration);
+          setIsTimeLeftFetched(true);
+        } else {
+          console.error("No data returned from the fetch.");
+        }
+      } catch (error) {
+        console.error("Error fetching quiz data:", error);
+      }
+    };
+    fetchData();
+  }, [quizId]);
+
+  const [questions, setQuestions] = useState<question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [isQuizFinished, setIsQuizFinished] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    if (timeLeft === 0 && isTimeLeftFetched) {
+      setIsQuizFinished(true);
+    }
+    if (!isQuizFinished) {
       const timer = setInterval(() => {
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearInterval(timer);
-    } else if (timeLeft === 0) {
-      setIsQuizFinished(true);
     }
   }, [timeLeft, isQuizFinished]);
 
@@ -97,6 +77,7 @@ export default function TakeQuizPage() {
     } else {
       setIsQuizFinished(true);
     }
+    calculateScore();
   };
 
   const handlePreviousQuestion = () => {
@@ -106,17 +87,16 @@ export default function TakeQuizPage() {
   };
 
   const calculateScore = () => {
-    let score = 0;
+    let calculatedScore = 0;
     questions.forEach((question, index) => {
       if (question.answer.toLowerCase() === userAnswers[index]?.toLowerCase()) {
-        score += 1;
+        calculatedScore += 1;
       }
     });
-    return score;
+    setScore(calculatedScore);
   };
 
   const calculatePercentage = () => {
-    const score = calculateScore();
     return (score / questions.length) * 100;
   };
 
@@ -134,7 +114,38 @@ export default function TakeQuizPage() {
     setSelectedOptions(Array(questions.length).fill(""));
   };
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex] || {};
+
+  const postGradingData = async () => {
+    const createGradingDto = {
+      quiz_id: quizId,
+      user_id: "user123", // This should be dynamically set based on the logged-in user
+      score: score,
+      user_answers: userAnswers,
+      correct_answers: questions.map((q) => q.answer), // Assuming each question has an 'answer' property
+    };
+
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_GRADING_API_URL}`,
+        createGradingDto,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Grading data posted successfully:", response.data);
+    } catch (error) {
+      console.error("Error posting grading data:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isQuizFinished) {
+      postGradingData(); // Post grading data when the quiz is finished
+    }
+  }, [isQuizFinished]);
 
   return (
     <div className="container mx-auto pb-5">
@@ -163,16 +174,16 @@ export default function TakeQuizPage() {
                     <div
                       className=""
                       key={index}
-                      onClick={() => handleAnswerChange(option.text)}
+                      onClick={() => handleAnswerChange(option)}
                     >
                       <div
                         className={` ${
-                          selectedOptions[currentQuestionIndex] === option.text
+                          selectedOptions[currentQuestionIndex] === option
                             ? "bg-blue-600"
                             : "bg-gray-700"
                         } mb-2 p-2 rounded-lg hover:brightness-75`}
                       >
-                        <p>{option.text}</p>
+                        <p>{option}</p>
                       </div>
                     </div>
                   ))}
@@ -180,24 +191,27 @@ export default function TakeQuizPage() {
               )}
 
               {currentQuestion.type === "True or False" && (
-                <div className="flex flex-row gap-3 ">
-                  {currentQuestion.options?.map((option, index) => (
-                    <div
-                      className="w-full"
-                      key={index}
-                      onClick={() => handleAnswerChange(option.text)}
-                    >
-                      <div
-                        className={`w-full ${
-                          selectedOptions[currentQuestionIndex] === option.text
-                            ? "bg-blue-600"
-                            : "bg-gray-700"
-                        } mb-2 p-2 rounded-lg hover:brightness-75`}
+                <div className="flex flex-row gap-3">
+                  {["True", "False"].map(
+                    (
+                      option,
+                      index // Static options for True or False
+                    ) => (
+                      <button
+                        key={index}
+                        className={`w-full p-2 text-center rounded-lg cursor-pointer 
+                    ${
+                      selectedOptions[currentQuestionIndex] === option
+                        ? "bg-blue-600"
+                        : "bg-gray-700"
+                    } 
+                    hover:bg-blue-500`}
+                        onClick={() => handleAnswerChange(option)}
                       >
-                        <p>{option.text}</p>
-                      </div>
-                    </div>
-                  ))}
+                        {option}
+                      </button>
+                    )
+                  )}
                 </div>
               )}
 
@@ -247,7 +261,7 @@ export default function TakeQuizPage() {
             <h1 className="text-2xl font-bold text-white pb-2">Quiz Results</h1>
             <div className="bg-[#2A2D36] p-4 rounded-lg shadow-md">
               <p className="text-white font-semibold">
-                Your Score: {calculateScore()} / {questions.length} (
+                Your Score: {score} / {questions.length} (
                 {calculatePercentage()}%)
               </p>
             </div>
@@ -298,4 +312,6 @@ export default function TakeQuizPage() {
       </div>
     </div>
   );
-}
+};
+
+export default TakeQuizPage;
