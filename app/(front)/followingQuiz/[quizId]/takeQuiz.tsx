@@ -4,8 +4,10 @@ import { useState, useEffect, SetStateAction } from "react";
 import { quiz, question } from "@/lib/models/quizModel";
 import { grading } from "@/lib/models/gradingModel";
 import axios from "axios";
+import { useSession } from "next-auth/react";
 
 const TakeQuizPage = ({ quizId }: { quizId: string }) => {
+  const {data:session} = useSession();
   const [quizData, setQuizData] = useState<quiz | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimeLeftFetched, setIsTimeLeftFetched] = useState(false);
@@ -40,6 +42,7 @@ const TakeQuizPage = ({ quizId }: { quizId: string }) => {
       }
     };
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizId]);
 
   const [questions, setQuestions] = useState<question[]>([]);
@@ -59,6 +62,7 @@ const TakeQuizPage = ({ quizId }: { quizId: string }) => {
       }, 1000);
       return () => clearInterval(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, isQuizFinished]);
 
   const handleAnswerChange = (answer: string) => {
@@ -119,7 +123,7 @@ const TakeQuizPage = ({ quizId }: { quizId: string }) => {
   const postGradingData = async () => {
     const createGradingDto = {
       quiz_id: quizId,
-      user_id: "user123", // This should be dynamically set based on the logged-in user
+      user_id: session?.user?.id, // This should be dynamically set based on the logged-in user
       score: score,
       user_answers: userAnswers,
       correct_answers: questions.map((q) => q.answer), // Assuming each question has an 'answer' property
@@ -145,6 +149,7 @@ const TakeQuizPage = ({ quizId }: { quizId: string }) => {
     if (isQuizFinished) {
       postGradingData(); // Post grading data when the quiz is finished
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQuizFinished]);
 
   return (
@@ -301,7 +306,7 @@ const TakeQuizPage = ({ quizId }: { quizId: string }) => {
               >
                 Restart Quiz
               </button>
-              <button onClick={() => router.push("/leaderboard")}>
+              <button onClick={() => router.push(`/leaderboard/${quizId}`)}>
                 <a className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
                   Finish Quiz
                 </a>

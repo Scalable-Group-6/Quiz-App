@@ -2,6 +2,7 @@
 import { User } from "@/lib/models/UserModel";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { signIn } from "next-auth/react";
 
 export default function Register() {
   const [userData, setUserData] = useState<User[]>([]);
@@ -12,34 +13,55 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-    e.preventDefault();
-    
-    // const userData = {
-    //   email,
-    //   password,
-    //   username,
-    //   _id: "",
-    // } as User;
+
+    const json = JSON.stringify({
+      username,
+      email,
+      password,
+    });
+
+    console.log("Request JSON:", json);
+    console.log("API URL:", `${process.env.NEXT_PUBLIC_AUTH_API_URL}/users`);
 
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,
-        JSON.stringify(userData),
+      const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_API_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json,
+        credentials: 'include'
+      });
 
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
-      console.log(response.data);
-    } catch (error) {
-      console.error("Error registering user: ", error);
+      console.log("Raw Response:", response);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error Response Data:", errorData);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Response Data:", data);
+
+      // Uncomment if you want to sign in the user after registration
+      // if (data) {
+      //   await signIn("credentials", {
+      //     email,
+      //     password,
+      //     redirect: true,
+      //     callbackUrl: "/",
+      //   });
+      // }
+    } catch (error:any) {
+      console.error("Error registering user: ", error.message);
+      // setError("Error registering user: " + error.message);
     }
   };
 
@@ -54,7 +76,9 @@ export default function Register() {
           <h2 className="text-2xl font-bold text-center text-white mb-4">
             Register
           </h2>
-          <form>
+          <form
+           onSubmit={handleSubmit}
+          >
             <div className="mb-3">
               <label className="block text-white pb-1">Email</label>
               <input
@@ -98,7 +122,6 @@ export default function Register() {
             <button
               type="submit"
               className="w-full p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded"
-              onClick={handleSubmit}
             >
               Register
             </button>

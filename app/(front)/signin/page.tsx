@@ -1,4 +1,5 @@
 "use client";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -6,6 +7,23 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    if (result?.error) {
+      console.error(result.error);
+    } else {
+      // Handle successful login
+      router.push("/");
+      console.log("Login successful");
+    }
+  };
 
   return (
     <div className="container mx-auto my-auto">
@@ -18,7 +36,7 @@ export default function Login() {
           <h2 className="text-2xl font-bold text-center text-white mb-4">
             Login
           </h2>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label className="pb-1 block text-white">Email</label>
               <input
@@ -42,9 +60,6 @@ export default function Login() {
             <button
               type="submit"
               className="w-full p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded"
-              onClick={() => {
-                router.push("/");
-              }}
             >
               Login
             </button>
@@ -56,10 +71,12 @@ export default function Login() {
             >
               Register
             </button>
-            <button 
-            className="underline"
-            onClick={() => router.push("/forgot_pass")}
-            >Forgot Password</button>
+            <button
+              className="underline"
+              onClick={() => router.push("/forgot_pass")}
+            >
+              Forgot Password
+            </button>
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { question, quiz } from "@/lib/models/quizModel";
 import axios from "axios";
+import { useSession } from "next-auth/react";
 
 interface QuizType {
   name: string;
@@ -31,9 +32,12 @@ const quizzType: QuizType[] = [
   },
 ];
 
-export default function createQuizPage() {
+export default function CreateQuizPage() {
   const [questionsData, setQuestionsData] = useState<question[]>([]);
 
+  const {data:session} = useSession();
+  console.log(session);
+  console.log(session?.user?.id);
   const router = useRouter();
   const [selectedQuizType, setSelectedQuizType] = useState("");
 
@@ -130,12 +134,12 @@ export default function createQuizPage() {
       start_time: dateStart,
       end_time: dateEnd,
       name: quizName,
-      creator_id: "w4ertuyitfrdg",
+      creator_id: session?.user?.id,
     } as quiz;
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_GRADING_API_URL}`,
+        `${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,
         JSON.stringify(quizData),
         {
           headers: {

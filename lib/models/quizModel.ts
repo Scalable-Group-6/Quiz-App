@@ -11,6 +11,7 @@ export type quiz = {
     name: string;
     duration: number;
     creator_id: string;
+    creator_name?: string;
     start_time: Date;
     end_time: Date;
     questions: question[];

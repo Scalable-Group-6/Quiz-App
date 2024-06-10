@@ -1,57 +1,92 @@
 "use client";
+import { grading } from "@/lib/models/gradingModel";
+import { quiz } from "@/lib/models/quizModel";
+import axios from "axios";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-interface QuizHistory {
-  quizName: string;
-  score: number;
-  date: string;
-}
-
-const dummyHistory: QuizHistory[] = [
-  { quizName: "Quiz Biologi", score: 85, date: "2024-05-01" },
-  { quizName: "Quiz Matematika", score: 90, date: "2024-05-10" },
-  { quizName: "Quiz Fisika", score: 75, date: "2024-05-15" },
-  { quizName: "Quiz Kimia", score: 80, date: "2024-05-20" },
-];
-
 export default function HistoryPage() {
-  const [history, setHistory] = useState<QuizHistory[]>([]);
-  const router = useRouter();
+  const [gradeByQuiz, setGradeByQuiz] = useState<grading[]>([]);
+  console.log(gradeByQuiz);
+  const { data: session } = useSession();
+  console.log(session);
+
+  const [quizData, setQuizData] = useState<quiz[]>([]);
 
   useEffect(() => {
-    // Fetch history data from backend
-    // Example: fetch('/api/history')
-    // .then(response => response.json())
-    // .then(data => setHistory(data));
-    setHistory(dummyHistory); // using dummy data for now
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_QUIZ_API_URL}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        setQuizData(response.data);
+        // console.log(response.data);
+      } catch (error) {
+        console.error("Error fetching quiz data: ", error);
+      }
+    };
+    fetchData();
   }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_GRADING_API_URL}/user/${session?.user?.id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        setGradeByQuiz(response.data);
+      } catch (error) {
+        console.error("Error fetching quiz data: ", error);
+      }
+    }
+    fetchData();
+  }, [session?.user]);
+
+  const router = useRouter();
 
   return (
     <div className="container mx-auto pb-5">
       <div className="bg-[#1F2128] rounded-lg shadow-md w-3/4 mx-auto relative p-6">
         <h1 className="text-2xl font-bold text-white pb-2">Quiz History</h1>
         <div className="bg-[#2A2D36] p-6 rounded-lg shadow-md">
-          {history.length === 0 ? (
+          {gradeByQuiz.length === 0 ? (
             <p className="text-white">No history available</p>
           ) : (
             <div>
               <div className="flex flex-row justify-between border-b-[1px] pb-2">
                 <p className="mx auto w-full  text-center">Quiz Name</p>
                 <p className="mx auto w-full  text-center">Score</p>
-                <p className="mx auto w-full  text-center">Date</p>
+                <p className="mx auto w-full  text-center"></p>
               </div>
               <div>
-                {history.map((quiz, index) => (
+                {gradeByQuiz.map((quiz, index) => (
                   <div
                     key={index}
                     className="flex flex-row justify-between pt-2 border-b-[1px] pb-2"
                   >
                     <p className="mx auto w-full  text-center">
-                      {quiz.quizName}
+                      {quizData.find((q) => q._id === quiz.quiz_id)?.name}
                     </p>
                     <p className="mx auto w-full  text-center">{quiz.score}</p>
-                    <p className="mx auto w-full  text-center">{quiz.date}</p>
+                    <button
+                      className="mx auto w-[70%]  text-center bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg "
+                      onClick={() => {
+                        router.push(`/leaderboard/${quiz.quiz_id}`);
+                      }}
+                    >
+                      Lihat
+                    </button>
                   </div>
                 ))}
               </div>

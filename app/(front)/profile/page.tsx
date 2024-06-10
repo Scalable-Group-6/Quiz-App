@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { useSession } from "next-auth/react";
 
 export default function ProfilePage() {
+  const {data: session} = useSession();
+  console.log("Session:", session);
   const [displayName, setDisplayName] = useState("User Display Name");
   const [password, setPassword] = useState("");
   const [quizCount, setQuizCount] = useState(10); // Example count of quizzes participated
@@ -68,77 +71,19 @@ export default function ProfilePage() {
             <>
               <h2 className="text-2xl font-semibold mb-6">Profile</h2>
               <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Display Name</label>
-                {isEditingDisplayName ? (
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="p-2 rounded-md bg-gray-700 text-white grow"
-                    />
-                    <button
-                      onClick={handleDisplayNameChange}
-                      className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded-md"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setIsEditingDisplayName(false)}
-                      className="bg-red-500 p-2 rounded-md"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex space-x-2 items-center">
-                    <span>{displayName}</span>
-                    <button
-                      onClick={() => setIsEditingDisplayName(true)}
-                      className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded-md"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                )}
+                <label className="block text-sm font-medium mb-2">
+                  Display Name
+                </label>
+
+                <div className="flex space-x-2 items-center">
+                  <span>{session?.user?.name}</span>
+                </div>
               </div>
+              
               <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Password</label>
-                {isEditingPassword ? (
-                  <div className="flex space-x-2">
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="p-2 rounded-md bg-gray-700 text-white grow"
-                    />
-                    <button
-                      onClick={handlePasswordChange}
-                      className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded-md"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setIsEditingPassword(false)}
-                      className="bg-red-500 p-2 rounded-md"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex space-x-2 items-center">
-                    <span>********</span>
-                    <button
-                      onClick={() => setIsEditingPassword(true)}
-                      className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded-md"
-                    >
-                      Change
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Quizzes Participated</label>
+                <label className="block text-sm font-medium mb-2">
+                  Quizzes Participated
+                </label>
                 <p>{quizCount}</p>
               </div>
               <button

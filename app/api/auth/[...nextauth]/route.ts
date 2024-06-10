@@ -1,9 +1,8 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import userService from "@/lib/services/userService";
-import { User } from "@/lib/models/UserModel"
+
+import { User } from "@/lib/models/UserModel";
+import axios from "axios";
 
 const authOptions = {
   pages: {
@@ -20,48 +19,31 @@ const authOptions = {
       },
       async authorize(credentials): Promise<any> {
         try {
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            (credentials as any).email || "",
-            (credentials as any).password || ""
-          );
-
-          const user = userCredential.user;
-
-          // Periksa apakah email sudah diverifikasi
-          if (user.emailVerified) {
-            const userDB = await userService.getUserByEmail(
-              user.email as string
-            );
-
-            if (Object.keys(userDB).length === 0) {
-              const newUserDB = {
-                id: user.uid,
-                name: user.displayName,
-                email: user.email,
-              } as User;
-              try {
-                // console.log(newUserDB)
-                await userService.createUser(newUserDB);
-
-                return {
-                  id: user.uid,
-                  email: user.email,
-                  name: user.displayName,
-                  emailVerified: user.emailVerified,
-
-                };
-              } catch (error) {}
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_AUTH_API_URL}/login`,
+            JSON.stringify({
+              email: (credentials as any).email,
+              password: (credentials as any).password,
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
             }
-
+          );
+          const user = response.data;
+          console.log("User:", user);
+          console.log("User:", user);
+          if (user) {
+            // Jika login berhasil, kembalikan objek pengguna
             return {
-              id: user.uid,
+              id: user._id,
               email: user.email,
-              name: user.displayName,
-              emailVerified: user.emailVerified,
+              name: user.username,
             };
           } else {
-            throw new Error("Email belum diverifikasi");
+            // Jika login gagal, kembalikan null
+            return null;
           }
         } catch (error) {
           console.log("Gagal autorisasi:", error);
@@ -76,7 +58,6 @@ const authOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.emailVerified = user.emailVerified;
       }
       return token;
     },
@@ -85,7 +66,6 @@ const authOptions = {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
-        session.user.emailVerified = token.emailVerified;
       }
       return session;
     },
