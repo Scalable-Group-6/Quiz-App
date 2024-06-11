@@ -3,6 +3,7 @@ import { User } from "@/lib/models/UserModel";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
   const [userData, setUserData] = useState<User[]>([]);
@@ -11,6 +12,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,10 +43,11 @@ export default function Register() {
 
       console.log("Raw Response:", response);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error Response Data:", errorData);
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (response.ok) {
+        router.push("/signin");
+        // const errorData = await response.json();
+        // console.error("Error Response Data:", errorData);
+        // throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
